@@ -131,7 +131,20 @@
 
     <div id="container">
         <div id="controls">
-            <h2 class="text-2xl font-bold mb-6 text-center">3D Vector Calculator</h2>
+            <h2 class="text-2xl font-bold mb-4 text-center">3D Vector Calculator</h2>
+            
+            <!-- Explanatory note about 3D interaction -->
+            <div class="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg mb-6 shadow-sm">
+                <span class="font-bold">How to Interact:</span>
+                <ul class="list-disc list-inside mt-2">
+                    <li><b>Orbit:</b> Left-click + drag</li>
+                    <li><b>Pan:</b> Right-click + drag</li>
+                    <li><b>Zoom:</b> Mouse scroll</li>
+                </ul>
+                <p class="mt-2">
+                    Unlike the 2D version, vectors are changed using the input boxes. This is because a 2D mouse drag is ambiguous in 3D space!
+                </p>
+            </div>
 
             <!-- Vector A Inputs -->
             <div class="vector-group">
@@ -460,8 +473,9 @@
             const origin = new THREE.Vector3(0, 0, 0);
 
             // Head length and width are relative to the vector length
-            const headLength = Math.min(length * 0.2, 0.8);
-            const headWidth = Math.min(length * 0.1, 0.4);
+            // (Reduced by 50% as requested)
+            const headLength = Math.min(length * 0.1, 0.4);
+            const headWidth = Math.min(length * 0.05, 0.2);
             const lineLength = length - headLength;
 
             // Line part
