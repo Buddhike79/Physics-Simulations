@@ -1,1 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Vector Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* Prevent scrolling */
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #controls {
+            width: 350px;
+            height: 100%;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        #scene-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .vector-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .vector-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .input-row label {
+            font-weight: 500;
+            margin-right: 10px;
+        }
+
+        .input-row input {
+            width: 60px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            text-align: center;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #218838;
+        }
+
+        .btn-sub-ab {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-sub-ab:hover {
+            background-color: #c82333;
+        }
+
+        .btn-sub-ba {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-sub-ba:hover {
+            background-color: #e0a800;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .result-box h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="container">
+        <div id="controls">
+            <h2 class="text-2xl font-bold mb-6 text-center">3D Vector Calculator</h2>
+
+            <!-- Vector A Inputs -->
+            <div class="vector-group">
+                <h3 class="text-lg" style="color: #007bff;">Vector A</h3>
+                <div class="input-row">
+                    <label for="ax">X:</label>
+                    <input type="number" id="ax" value="2">
+                    <label for="ay">Y:</label>
+                    <input type="number" id="ay" value="3">
+                    <label for="az">Z:</label>
+                    <input type="number" id="az" value="1">
+                </div>
+            </div>
+
+            <!-- Vector B Inputs -->
+            <div class="vector-group">
+                <h3 class="text-lg" style="color: #dc3545;">Vector B</h3>
+                <div class="input-row">
+                    <label for="bx">X:</label>
+                    <input type="number" id="bx" value="-1">
+                    <label for="by">Y:</label>
+                    <input type="number" id="by" value="1">
+                    <label for="bz">Z:</label>
+                    <input type="number" id="bz" value="3">
+                </div>
+            </div>
+
+            <!-- Operation Buttons -->
+            <div class="vector-group">
+                <h3 class="text-lg">Operations</h3>
+                <button id="add" class="btn btn-add">Add (A + B)</button>
+                <button id="sub-ab" class="btn btn-sub-ab">Subtract (A - B)</button>
+                <button id="sub-ba" class="btn btn-sub-ba">Subtract (B - A)</button>
+            </div>
+
+            <!-- Grid Scale -->
+            <div class="vector-group">
+                <h3 class="text-lg">Settings</h3>
+                <div class="input-row">
+                    <label for="grid-scale">Graph Scale:</label>
+                    <input type="number" id="grid-scale" value="10" min="1" step="1">
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div class="result-box" id="result-box" style="display: none;">
+                <h4>Resultant Vector (R)</h4>
+                <p id="result-mag"><b>Magnitude:</b> 0.00</p>
+                <p id="result-angles"><b>Angles (α, β, γ):</b> 0.0°, 0.0°, 0.0°</p>
+                <p id="result-coords"><b>Coords (x, y, z):</b> (0.0, 0.0, 0.0)</p>
+            </div>
+        </div>
+        <div id="scene-container">
+            <!-- 3D Scene will be rendered here -->
+        </div>
+    </div>
+
+    <!--
+    All scripts are moved to the end of the body to ensure
+    correct loading order.
+    -->
+    <!-- 1. Load base three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 2. Load OrbitControls, which adds itself to the THREE object -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- 3. Run our application script *after* libraries are loaded -->
+    <script>
+        // --- Global variables ---
+        let scene, camera, renderer, controls;
+        let vectorA, vectorB, vectorR;
+        let negativeVector; // Group for dashed -A or -B
+        let parallelogram; // This will be a THREE.Group
+        let gridHelper, axesHelper;
+        let currentOperation = null; // 'add', 'sub-ab', 'sub-ba'
+
+        // DOM Elements
+        const sceneContainer = document.getElementById('scene-container');
+        const resultBox = document.getElementById('result-box');
+        const resultMag = document.getElementById('result-mag');
+        const resultAngles = document.getElementById('result-angles');
+        const resultCoords = document.getElementById('result-coords');
+
+        const inputs = {
+            ax: document.getElementById('ax'),
+            ay: document.getElementById('ay'),
+            az: document.getElementById('az'),
+            bx: document.getElementById('bx'),
+            by: document.getElementById('by'),
+            bz: document.getElementById('bz'),
+            gridScale: document.getElementById('grid-scale')
+        };
+
+        // --- Initialization ---
+
+        function init() {
+            // 1. Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            // 2. Camera
+            const fov = 75;
+            const aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
+            const near = 0.1;
+            const far = 1000;
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+            camera.position.set(5, 5, 10);
+            camera.lookAt(0, 0, 0);
+
+            // 3. Renderer
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(sceneContainer.clientWidth, sceneContainer.clientHeight);
+            sceneContainer.appendChild(renderer.domElement);
+
+            // 4. Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // 5. Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+
+            // 6. Initial Scene Objects
+            vectorA = new THREE.Group();
+            vectorB = new THREE.Group();
+            vectorR = new THREE.Group();
+            negativeVector = new THREE.Group(); // For dashed -A or -B
+            parallelogram = new THREE.Group();
+            scene.add(vectorA, vectorB, vectorR, parallelogram, negativeVector);
+
+            updateGrid();
+            updateVectorsFromInputs();
+
+            // 7. Handle Resizing
+            window.addEventListener('resize', onWindowResize, false);
+
+            // 8. Start Animation Loop
+            animate();
+        }
+
+        // --- Animation Loop ---
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update(); // Update orbit controls
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Handlers ---
+
+        function onWindowResize() {
+            camera.aspect = sceneContainer.clientWidth / sceneContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(sceneContainer.clientWidth, sceneContainer.clientHeight);
+        }
+
+        // Listen to all inputs
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.id === 'grid-scale') {
+                    updateGrid();
+                } else {
+                    updateVectorsFromInputs();
+                }
+            });
+        });
+
+        document.getElementById('add').addEventListener('click', () => {
+            currentOperation = 'add';
+            updateVectorsFromInputs();
+        });
+
+        document.getElementById('sub-ab').addEventListener('click', () => {
+            currentOperation = 'sub-ab';
+            updateVectorsFromInputs();
+        });
+
+        document.getElementById('sub-ba').addEventListener('click', () => {
+            currentOperation = 'sub-ba';
+            updateVectorsFromInputs();
+        });
+
+        // --- Core Logic ---
+
+        function getVectorInputs() {
+            return {
+                a: new THREE.Vector3(
+                    parseFloat(inputs.ax.value) || 0,
+                    parseFloat(inputs.ay.value) || 0,
+                    parseFloat(inputs.az.value) || 0
+                ),
+                b: new THREE.Vector3(
+                    parseFloat(inputs.bx.value) || 0,
+                    parseFloat(inputs.by.value) || 0,
+                    parseFloat(inputs.bz.value) || 0
+                )
+            };
+        }
+
+        function updateVectorsFromInputs() {
+            const {
+                a,
+                b
+            } = getVectorInputs();
+
+            // Always clear the negative vector first
+            clearGroup(negativeVector);
+
+            // Default: draw solid A and solid B
+            drawVector(vectorA, a, 0x007bff); // Blue
+            drawVector(vectorB, b, 0xdc3545); // Red
+
+            if (currentOperation) {
+                performOperation(a, b);
+                resultBox.style.display = 'block';
+            } else {
+                // No operation selected, hide resultant
+                drawVector(vectorR, new THREE.Vector3(0, 0, 0), 0x00ff00);
+                clearGroup(parallelogram);
+                resultBox.style.display = 'none';
+            }
+        }
+
+        function performOperation(a, b) {
+            let r = new THREE.Vector3();
+            let helperVec1, helperVec2;
+            let negB = b.clone().multiplyScalar(-1);
+            let negA = a.clone().multiplyScalar(-1);
+
+            switch (currentOperation) {
+                case 'add':
+                    r.addVectors(a, b);
+                    helperVec1 = a.clone();
+                    helperVec2 = b.clone();
+                    // Ensure solid A and B are drawn
+                    drawVector(vectorA, a, 0x007bff);
+                    drawVector(vectorB, b, 0xdc3545);
+                    break;
+
+                case 'sub-ab':
+                    r.subVectors(a, b);
+                    helperVec1 = a.clone();
+                    helperVec2 = negB;
+                    // Draw solid A, but clear solid B and draw dashed -B
+                    drawVector(vectorA, a, 0x007bff);
+                    clearGroup(vectorB);
+                    drawVector(negativeVector, negB, 0xdc3545, true); // Dashed red
+                    break;
+
+                case 'sub-ba':
+                    r.subVectors(b, a);
+                    helperVec1 = b.clone();
+                    helperVec2 = negA;
+                    // Draw solid B, but clear solid A and draw dashed -A
+                    drawVector(vectorB, b, 0xdc3545);
+                    clearGroup(vectorA);
+                    drawVector(negativeVector, negA, 0x007bff, true); // Dashed blue
+                    break;
+            }
+
+            drawVector(vectorR, r, 0x28a745); // Green
+            drawParallelogram(helperVec1, helperVec2);
+            updateResultDisplay(r);
+        }
+
+
+        function updateResultDisplay(r) {
+            const mag = r.length();
+            const x = r.x;
+            const y = r.y;
+            const z = r.z;
+
+            // Direction Cosines (angles with x, y, z axes)
+            // Handle mag = 0 case to avoid NaN
+            const alpha = mag === 0 ? 90 : (Math.acos(x / mag) * 180 / Math.PI).toFixed(1);
+            const beta = mag === 0 ? 90 : (Math.acos(y / mag) * 180 / Math.PI).toFixed(1);
+            const gamma = mag === 0 ? 90 : (Math.acos(z / mag) * 180 / Math.PI).toFixed(1);
+
+            resultMag.innerHTML = `<b>Magnitude:</b> ${mag.toFixed(2)}`;
+            resultAngles.innerHTML = `<b>Angles (α, β, γ):</b> ${alpha}°, ${beta}°, ${gamma}°`;
+            resultCoords.innerHTML = `<b>Coords (x, y, z):</b> (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+        }
+
+        // --- Drawing Functions ---
+
+        /**
+         * Clears all children from a THREE.Group and disposes their geometry/material.
+         */
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const child = group.children[0];
+                group.remove(child);
+                // Dispose of geometry and material if they exist
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    // If material is an array, dispose all
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            }
+        }
+
+        /**
+         * Draws or updates a vector in the scene.
+         * @param {THREE.Group} vectorGroup - The group to update (e.g., vectorA)
+         * @param {THREE.Vector3} v - The vector to draw
+         * @param {number} color - The hex color
+         * @param {boolean} [dashed=false] - Whether the vector should be dashed
+         */
+        function drawVector(vectorGroup, v, color, dashed = false) {
+            clearGroup(vectorGroup); // Clear previous vector
+
+            const length = v.length();
+            if (length === 0) return; // Don't draw zero-length vectors
+
+            const dir = v.clone().normalize();
+            const origin = new THREE.Vector3(0, 0, 0);
+
+            // Head length and width are relative to the vector length
+            const headLength = Math.min(length * 0.2, 0.8);
+            const headWidth = Math.min(length * 0.1, 0.4);
+            const lineLength = length - headLength;
+
+            // Line part
+            const lineMaterial = dashed ?
+                new THREE.LineDashedMaterial({
+                    color: color,
+                    dashSize: 0.2,
+                    gapSize: 0.1
+                }) :
+                new THREE.LineBasicMaterial({
+                    color: color
+                });
+
+            // Make sure line is at least a tiny bit long
+            if (lineLength > 0.001) {
+                const linePoints = [origin, dir.clone().multiplyScalar(lineLength)];
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints);
+                const line = new THREE.Line(lineGeom, lineMaterial);
+                if (dashed) {
+                    line.computeLineDistances(); // Required for dashed lines
+                }
+                vectorGroup.add(line);
+            }
+
+            // Cone (head) part
+            const coneGeom = new THREE.ConeGeometry(headWidth, headLength, 8);
+            const coneMaterial = new THREE.MeshBasicMaterial({
+                color: color
+            });
+            const cone = new THREE.Mesh(coneGeom, coneMaterial);
+
+            // Align the cone's Y-axis (its axis of symmetry) with the vector's direction
+            cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
+            // Position the cone. The cone's geometry origin is its center.
+            // We want the tip of the cone to be at 'v'.
+            // The tip is at +headLength/2 along its Y-axis.
+            // So, we position its center at 'v' and translate it *back*
+            // by half its length along its new direction.
+            const offset = dir.clone().multiplyScalar(-headLength / 2);
+            cone.position.copy(v).add(offset);
+
+            vectorGroup.add(cone);
+        }
+
+        function drawParallelogram(v1, v2) {
+            clearGroup(parallelogram);
+
+            const vSum = new THREE.Vector3().addVectors(v1, v2);
+
+            const material = new THREE.LineDashedMaterial({
+                color: 0x888888,
+                dashSize: 0.2,
+                gapSize: 0.1
+            });
+
+            // Line from v1 tip to vSum tip
+            let points = [v1.clone(), vSum.clone()];
+            let geom = new THREE.BufferGeometry().setFromPoints(points);
+            let line1 = new THREE.Line(geom, material);
+            line1.computeLineDistances();
+            parallelogram.add(line1);
+
+            // Line from v2 tip to vSum tip
+            points = [v2.clone(), vSum.clone()];
+            geom = new THREE.BufferGeometry().setFromPoints(points);
+            let line2 = new THREE.Line(geom, material);
+            line2.computeLineDistances();
+            parallelogram.add(line2);
+        }
+
+        /**
+         * Creates a text label as a sprite.
+         */
+        function createTextLabel(text, position, color = '#000000', size = 0.5) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const font = 'Bold 48px Arial';
+            context.font = font;
+
+            // Get text metrics
+            const metrics = context.measureText(text);
+            const textWidth = metrics.width;
+            const textHeight = 48; // Base font size, adjust as needed
+
+            // Set canvas size with padding
+            canvas.width = textWidth + 10; // Padding
+            canvas.height = textHeight + 10; // Padding
+
+            // Re-set context properties after canvas resize
+            context.font = font;
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+
+            // Draw text in the center of the canvas
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false // Make sure label is visible
+            });
+
+            const sprite = new THREE.Sprite(material);
+
+            // Scale sprite
+            const aspect = canvas.width / canvas.height;
+            sprite.scale.set(size * aspect, size, 1);
+            sprite.position.copy(position);
+
+            return sprite;
+        }
+
+
+        function updateGrid() {
+            const scale = parseFloat(inputs.gridScale.value) || 10;
+            const divisions = 10;
+
+            // Remove old grid and axes
+            if (gridHelper) {
+                scene.remove(gridHelper);
+                gridHelper.geometry.dispose();
+                gridHelper.material.dispose();
+            }
+            if (axesHelper) {
+                scene.remove(axesHelper);
+                clearGroup(axesHelper); // Use clearGroup for the axes group
+            }
+
+            // Add new grid
+            gridHelper = new THREE.GridHelper(scale * 2, divisions * 2, 0xcccccc, 0xcccccc);
+            gridHelper.material.transparent = true;
+            gridHelper.material.opacity = 0.3;
+            scene.add(gridHelper);
+
+            // Add new axes
+            axesHelper = new THREE.Group();
+            const lineMaterial = new THREE.LineBasicMaterial({
+                linewidth: 2
+            });
+
+            const axisColors = [
+                0xff0000, 0x808080, // +X (red), -X (gray)
+                0x00ff00, 0x808080, // +Y (green), -Y (gray)
+                0x007bff, 0x808080 // +Z (blue), -Z (gray)
+            ];
+
+            const axisDirections = [
+                [1, 0, 0],
+                [-1, 0, 0],
+                [0, 1, 0],
+                [0, -1, 0],
+                [0, 0, 1],
+                [0, 0, -1]
+            ];
+
+            for (let i = 0; i < 6; i++) {
+                const material = lineMaterial.clone();
+                material.color.setHex(axisColors[i]);
+                const dir = new THREE.Vector3(...axisDirections[i]);
+                const points = [new THREE.Vector3(0, 0, 0), dir.multiplyScalar(scale)];
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geom, material);
+                axesHelper.add(line);
+            }
+
+            // Add labels
+            const labelOffset = 0.5;
+            const labelSize = 0.4;
+            axesHelper.add(createTextLabel(
+                'X',
+                new THREE.Vector3(scale + labelOffset, 0, 0),
+                '#FF0000',
+                labelSize
+            ));
+            axesHelper.add(createTextLabel(
+                'Y',
+                new THREE.Vector3(0, scale + labelOffset, 0),
+                '#00FF00',
+                labelSize
+            ));
+            axesHelper.add(createTextLabel(
+                'Z',
+                new THREE.Vector3(0, 0, scale + labelOffset),
+                '#007BFF',
+                labelSize
+            ));
+
+
+            scene.add(axesHelper);
+        }
+
+        // --- Start the application ---
+        init();
+    </script>
+
+</body>
+
+</html>
+
 
