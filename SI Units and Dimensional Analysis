@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI Unit and Dimensional Analysis Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .base-unit-card {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        .unit-symbol {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #1d4ed8;
+        }
+        .unit-name {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .result-card {
+            background-color: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .result-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .result-value {
+            /* font-family: monospace; */
+            font-size: 1.25rem;
+            color: #1e40af;
+            letter-spacing: 0.05em; /* Added for better readability */
+        }
+        .component-link {
+            color: #2563eb;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .component-link:hover {
+            color: #1d4ed8;
+        }
+    </style>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">SI Units and Dimensional Analysis</h1>
+        <p class="text-center text-gray-600 mb-8">Explore how derived quantities are built from the 7 base SI units.</p>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-center text-gray-700 mb-4">The 7 Fundamental SI Base Units</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+                <div class="base-unit-card"><div class="unit-symbol">m</div><div class="unit-name">Metre</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">kg</div><div class="unit-name">Kilogram</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">s</div><div class="unit-name">Second</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">A</div><div class="unit-name">Ampere</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">K</div><div class="unit-name">Kelvin</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">mol</div><div class="unit-name">Mole</div></div>
+                <div class="base-unit-card"><div class="unit-symbol">cd</div><div class="unit-name">Candela</div></div>
+            </div>
+        </div>
+
+        <div>
+            <label for="quantity-select" class="block text-xl font-semibold text-center text-gray-700 mb-3">Select a Derived Quantity</label>
+            <select id="quantity-select" class="block w-full max-w-md mx-auto p-3 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="velocity">Velocity</option>
+                <option value="acceleration">Acceleration</option>
+                <option value="force">Force (Newton)</option>
+                <option value="pressure">Pressure (Pascal)</option>
+                <option value="energy">Energy (Joule)</option>
+                <option value="power">Power (Watt)</option>
+                <option value="density">Density</option>
+                <option value="momentum">Momentum</option>
+                <option value="frequency">Frequency (Hertz)</option>
+                <option value="area">Area</option>
+                <option value="volume">Volume</option>
+                <option value="charge">Electric Charge (Coulomb)</option>
+                <option value="voltage">Voltage (Volt)</option>
+                <option value="resistance">Resistance (Ohm)</option>
+                <option value="capacitance">Capacitance (Farad)</option>
+                <option value="specificHeat">Specific Heat Capacity</option>
+                <option value="entropy">Entropy</option>
+                <option value="thermalConductivity">Thermal Conductivity</option>
+                <option value="molarMass">Molar Mass</option>
+                <option value="concentration">Concentration (Molarity)</option>
+                <option value="luminousFlux">Luminous Flux (Lumen)</option>
+            </select>
+        </div>
+
+        <div id="result-container" class="mt-8 space-y-4">
+            <!-- Results will be injected here -->
+        </div>
+    </div>
+
+    <script>
+        const derivedQuantities = {
+            velocity: {
+                name: "Velocity",
+                definition: "Displacement / Time",
+                baseUnits: "m⋅s⁻¹",
+                dimensions: "LT⁻¹"
+            },
+            acceleration: {
+                name: "Acceleration",
+                definition: "Velocity / Time",
+                baseUnits: "m⋅s⁻²",
+                dimensions: "LT⁻²"
+            },
+            force: {
+                name: "Force",
+                definition: "Mass × Acceleration",
+                baseUnits: "kg⋅m⋅s⁻²",
+                dimensions: "MLT⁻²"
+            },
+            pressure: {
+                name: "Pressure",
+                definition: "Force / Area",
+                baseUnits: "kg⋅m⁻¹⋅s⁻²",
+                dimensions: "ML⁻¹T⁻²"
+            },
+            energy: {
+                name: "Energy",
+                definition: "Force × Distance",
+                baseUnits: "kg⋅m²⋅s⁻²",
+                dimensions: "ML²T⁻²"
+            },
+            power: {
+                name: "Power",
+                definition: "Energy / Time",
+                baseUnits: "kg⋅m²⋅s⁻³",
+                dimensions: "ML²T⁻³"
+            },
+            density: {
+                name: "Density",
+                definition: "Mass / Volume",
+                baseUnits: "kg⋅m⁻³",
+                dimensions: "ML⁻³"
+            },
+            momentum: {
+                name: "Momentum",
+                definition: "Mass × Velocity",
+                baseUnits: "kg⋅m⋅s⁻¹",
+                dimensions: "MLT⁻¹"
+            },
+            frequency: {
+                name: "Frequency",
+                definition: "Cycles / Time",
+                baseUnits: "s⁻¹",
+                dimensions: "T⁻¹"
+            },
+            area: {
+                name: "Area",
+                definition: "Length × Width",
+                baseUnits: "m²",
+                dimensions: "L²"
+            },
+            volume: {
+                name: "Volume",
+                definition: "Length × Width × Height",
+                baseUnits: "m³",
+                dimensions: "L³"
+            },
+            charge: {
+                name: "Electric Charge",
+                definition: "Current × Time",
+                baseUnits: "A⋅s",
+                dimensions: "IT" 
+            },
+            voltage: {
+                name: "Voltage",
+                definition: "Energy / Charge",
+                baseUnits: "kg⋅m²⋅s⁻³⋅A⁻¹",
+                dimensions: "ML²T⁻³I⁻¹"
+            },
+            resistance: {
+                name: "Resistance",
+                definition: "Voltage / Current",
+                baseUnits: "kg⋅m²⋅s⁻³⋅A⁻²",
+                dimensions: "ML²T⁻³I⁻²"
+            },
+            capacitance: {
+                name: "Capacitance",
+                definition: "Charge / Voltage",
+                baseUnits: "A²⋅s⁴⋅kg⁻¹⋅m⁻²",
+                dimensions: "I²T⁴M⁻¹L⁻²"
+            },
+            specificHeat: {
+                name: "Specific Heat Capacity",
+                definition: "Energy / (Mass × Temp.)",
+                baseUnits: "m²⋅s⁻²⋅K⁻¹",
+                dimensions: "L²T⁻²Θ⁻¹"
+            },
+            entropy: {
+                name: "Entropy",
+                definition: "Energy / Temperature",
+                baseUnits: "kg⋅m²⋅s⁻²⋅K⁻¹",
+                dimensions: "ML²T⁻²Θ⁻¹"
+            },
+            thermalConductivity: {
+                name: "Thermal Conductivity",
+                definition: "Power / (Distance × Temp.)",
+                baseUnits: "kg⋅m⋅s⁻³⋅K⁻¹",
+                dimensions: "MLT⁻³Θ⁻¹"
+            },
+            molarMass: {
+                name: "Molar Mass",
+                definition: "Mass / Amount",
+                baseUnits: "kg⋅mol⁻¹",
+                dimensions: "MN⁻¹"
+            },
+            concentration: {
+                name: "Concentration",
+                definition: "Amount / Volume",
+                baseUnits: "mol⋅m⁻³",
+                dimensions: "NL⁻³"
+            },
+            luminousFlux: {
+                name: "Luminous Flux",
+                definition: "Luminous Intensity × Solid Angle",
+                baseUnits: "cd",
+                dimensions: "J"
+            }
+        };
+
+        const selectElement = document.getElementById('quantity-select');
+        const resultContainer = document.getElementById('result-container');
+
+        const componentKeys = Object.keys(derivedQuantities).map(k => derivedQuantities[k].name);
+        const componentRegex = new RegExp(`\\b(${componentKeys.join('|')})\\b`, 'g');
+
+        function formatWithSuperscript(text) {
+            if (!text) return '';
+            const replacements = {
+                '⁻¹': '<sup>-1</sup>', '⁻²': '<sup>-2</sup>', '⁻³': '<sup>-3</sup>', '⁻⁴': '<sup>-4</sup>',
+                '²': '<sup>2</sup>', '³': '<sup>3</sup>', '⁴': '<sup>4</sup>'
+            };
+            let formattedText = text;
+            for (const [key, value] of Object.entries(replacements)) {
+                formattedText = formattedText.replace(new RegExp(key, 'g'), value);
+            }
+            formattedText = formattedText.replace(/⋅/g, ' &sdot; ');
+            return formattedText;
+        }
+
+        function getQuantityKeyByName(name) {
+            for (const key in derivedQuantities) {
+                if (derivedQuantities[key].name === name) {
+                    return key;
+                }
+            }
+            return null;
+        }
+
+        function updateDisplay() {
+            const selectedQuantity = selectElement.value;
+            const data = derivedQuantities[selectedQuantity];
+
+            if (!data) {
+                resultContainer.innerHTML = '';
+                return;
+            }
+
+            const definitionHTML = data.definition.replace(componentRegex, (match) => {
+                const key = getQuantityKeyByName(match);
+                if (key) {
+                    return `<span class="component-link" data-quantity="${key}">${match}</span>`;
+                }
+                return match;
+            });
+
+            resultContainer.innerHTML = `
+                <div class="result-card">
+                    <p class="result-title">Definition</p>
+                    <p class="result-value">${definitionHTML}</p>
+                </div>
+                <div class="result-card">
+                    <p class="result-title">Expressed in SI Base Units</p>
+                    <p class="result-value">${formatWithSuperscript(data.baseUnits)}</p>
+                </div>
+                <div class="result-card">
+                    <p class="result-title">Dimensional Formula</p>
+                    <p class="result-value">${formatWithSuperscript(data.dimensions)}</p>
+                </div>
+            `;
+        }
+
+        selectElement.addEventListener('change', updateDisplay);
+
+        resultContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('component-link')) {
+                const quantityKey = event.target.dataset.quantity;
+                if (quantityKey) {
+                    selectElement.value = quantityKey;
+                    updateDisplay();
+                }
+            }
+        });
+
+        // Initial display
+        updateDisplay();
+    </script>
+</body>
+</html>
+
