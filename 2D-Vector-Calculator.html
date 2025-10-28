@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Vector Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Change cursor to indicate vectors are draggable */
+        canvas.draggable {
+            cursor: grab;
+        }
+        canvas.dragging {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-6xl bg-white rounded-2xl shadow-lg p-4 sm:p-8 flex flex-col lg:flex-row gap-8">
+        
+        <!-- Controls Panel -->
+        <div class="w-full lg:w-1/3 xl:w-1/4">
+            <h1 class="text-2xl sm-text-3xl font-bold text-gray-900 mb-2">2D Vector Calculator</h1>
+            <p class="text-gray-500 mb-6">Enter values below, or click and drag the vector tips on the graph.</p>
+            
+            <!-- Graph Scale Control -->
+            <div class="mb-6">
+                <label for="maxMag" class="block text-sm font-medium text-gray-700">Graph Scale (Max Magnitude)</label>
+                <input type="number" id="maxMag" value="150" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <!-- Vector A -->
+            <div class="mb-6 p-4 border border-blue-200 rounded-lg bg-blue-50">
+                <h2 class="text-xl font-bold text-blue-800 mb-3">Vector A</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="magA" class="block text-sm font-medium text-blue-700">Magnitude</label>
+                        <input type="number" id="magA" value="80" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="angleA" class="block text-sm font-medium text-blue-700">Angle (°)</label>
+                        <input type="number" id="angleA" value="30" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vector B -->
+            <div class="mb-6 p-4 border border-red-200 rounded-lg bg-red-50">
+                <h2 class="text-xl font-bold text-red-800 mb-3">Vector B</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="magB" class="block text-sm font-medium text-red-700">Magnitude</label>
+                        <input type="number" id="magB" value="60" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500">
+                    </div>
+                    <div>
+                        <label for="angleB" class="block text-sm font-medium text-red-700">Angle (°)</label>
+                        <input type="number" id="angleB" value="120" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <button id="addBtn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+                    Add (A + B)
+                </button>
+                <button id="subtractBtn" class="w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transition-transform transform hover:scale-105">
+                    Sub (A - B)
+                </button>
+                <button id="subtractBtnBA" class="w-full bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 transition-transform transform hover:scale-105">
+                    Sub (B - A)
+                </button>
+            </div>
+            
+            <!-- Result Display -->
+            <div id="result-card" class="hidden p-4 border-2 border-dashed rounded-lg">
+                 <h2 class="text-xl font-bold text-gray-800 mb-2">Resultant Vector (R)</h2>
+                 <p class="text-gray-600 text-lg"><strong>Magnitude:</strong> <span id="resultMag" class="font-mono"></span></p>
+                 <p class="text-gray-600 text-lg"><strong>Angle:</strong> <span id="resultAngle" class="font-mono"></span>°</p>
+            </div>
+
+        </div>
+
+        <!-- Canvas -->
+        <div class="w-full lg:w-2/3 xl:w-3/4 flex-grow flex items-center justify-center bg-gray-100 rounded-lg aspect-square">
+            <canvas id="vectorCanvas" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element References
+        const canvas = document.getElementById('vectorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const magAInput = document.getElementById('magA');
+        const angleAInput = document.getElementById('angleA');
+        const magBInput = document.getElementById('magB');
+        const angleBInput = document.getElementById('angleB');
+        const maxMagInput = document.getElementById('maxMag');
+
+        const addBtn = document.getElementById('addBtn');
+        const subtractBtn = document.getElementById('subtractBtn');
+        const subtractBtnBA = document.getElementById('subtractBtnBA');
+        
+        const resultCard = document.getElementById('result-card');
+        const resultMagEl = document.getElementById('resultMag');
+        const resultAngleEl = document.getElementById('resultAngle');
+
+        let centerX, centerY, scale;
+        let draggingVector = null; // State to track which vector is being dragged: 'A', 'B', or 'R'
+        let currentOperation = null; // State to track the last operation performed: 'add', 'subtract', or 'subtractBA'
+        let dragStartCoords = null; // To store initial vector coords on drag start { Ax, Ay, Bx, By }
+
+        // --- Core Drawing and Calculation Logic ---
+
+        function setupCanvas() {
+            // HiDPI canvas scaling for sharp graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            centerX = rect.width / 2;
+            centerY = rect.height / 2;
+
+            const maxMag = parseFloat(maxMagInput.value) || 150;
+            // Scale based on the smaller dimension to fit the grid
+            scale = Math.min(rect.width, rect.height) / (2 * maxMag) * 0.9;
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+
+            // Draw axes
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.clientWidth, centerY);
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.clientHeight);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.stroke();
+
+            // Draw grid lines
+            const gridSize = 50 * scale; 
+            ctx.beginPath();
+            ctx.strokeStyle = '#e2e8f0';
+            for (let x = centerX + gridSize; x < canvas.clientWidth; x += gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.clientHeight);
+            }
+            for (let x = centerX - gridSize; x > 0; x -= gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.clientHeight);
+            }
+            for (let y = centerY + gridSize; y < canvas.clientHeight; y += gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.clientWidth, y);
+            }
+            for (let y = centerY - gridSize; y > 0; y -= gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.clientWidth, y);
+            }
+            ctx.stroke();
+        }
+
+        function drawVector(startX, startY, endX, endY, color, label, isDashed = false, noHead = false) {
+            const headlen = 10;
+            const angle = Math.atan2(endY - startY, endX - startX);
+            
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 3;
+
+            // Dashed lines for parallelogram helpers
+            if (isDashed) {
+                ctx.setLineDash([5, 5]);
+            }
+
+            // Draw the vector line
+            ctx.beginPath();
+            ctx.moveTo(centerX + startX, centerY - startY);
+            ctx.lineTo(centerX + endX, centerY - endY);
+            ctx.stroke();
+            
+            // Draw the arrowhead
+            if (!noHead) {
+                ctx.beginPath();
+                ctx.moveTo(centerX + endX, centerY - endY);
+                ctx.lineTo(centerX + endX - headlen * Math.cos(angle - Math.PI / 6), centerY - endY + headlen * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(centerX + endX - headlen * Math.cos(angle + Math.PI / 6), centerY - endY + headlen * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Draw the label
+            if (label) {
+                ctx.font = 'bold 16px Inter';
+                ctx.fillStyle = color;
+                const labelX = centerX + endX * 1.1 + 10;
+                const labelY = centerY - endY * 1.1 - 10;
+                ctx.fillText(label, labelX, labelY);
+            }
+            ctx.restore();
+        }
+
+        function calculateAndDraw(operation) {
+            setupCanvas();
+            drawGrid();
+
+            // Get values and convert to radians
+            const magA = parseFloat(magAInput.value) || 0;
+            const angleARad = (parseFloat(angleAInput.value) || 0) * (Math.PI / 180);
+            const magB = parseFloat(magBInput.value) || 0;
+            const angleBRad = (parseFloat(angleBInput.value) || 0) * (Math.PI / 180);
+
+            // Convert to Cartesian coordinates
+            const Ax = magA * Math.cos(angleARad);
+            const Ay = magA * Math.sin(angleARad);
+            const Bx = magB * Math.cos(angleBRad);
+            const By = magB * Math.sin(angleBRad);
+            
+            // Base vectors (always draw A)
+            drawVector(0, 0, Ax * scale, Ay * scale, '#2563eb', 'A');
+
+            let Rx, Ry;
+
+            if (!operation) {
+                // If no operation is active, just draw B from the origin and return
+                drawVector(0, 0, Bx * scale, By * scale, '#dc2626', 'B');
+                resultCard.classList.add('hidden');
+                return;
+            }
+
+            resultCard.classList.remove('hidden');
+
+            if (operation === 'add') {
+                Rx = Ax + Bx;
+                Ry = Ay + By;
+                // Draw Vector B from origin as well for parallelogram method
+                drawVector(0, 0, Bx * scale, By * scale, '#dc2626', 'B');
+                
+                // Draw helper lines to complete the parallelogram
+                drawVector(Ax * scale, Ay * scale, (Ax + Bx) * scale, (Ay + By) * scale, 'rgba(220, 38, 38, 0.6)', '', true, true);
+                drawVector(Bx * scale, By * scale, (Bx + Ax) * scale, (By + Ay) * scale, 'rgba(37, 99, 235, 0.6)', '', true, true);
+
+                resultCard.className = "p-4 border-2 border-dashed rounded-lg border-green-400 bg-green-50";
+            } else if (operation === 'subtract') { // subtract A - B, using parallelogram for A + (-B)
+                Rx = Ax - Bx;
+                Ry = Ay - By;
+                
+                drawVector(0, 0, -Bx * scale, -By * scale, '#facc15', '-B');
+                drawVector(Ax * scale, Ay * scale, (Ax - Bx) * scale, (Ay - By) * scale, 'rgba(240, 200, 21, 0.6)', '', true, true);
+                drawVector(-Bx * scale, -By * scale, (-Bx + Ax) * scale, (-By + Ay) * scale, 'rgba(37, 99, 235, 0.6)', '', true, true);
+                drawVector(0, 0, Bx * scale, By * scale, 'rgba(220, 38, 38, 0.3)', 'B');
+
+                resultCard.className = "p-4 border-2 border-dashed rounded-lg border-yellow-400 bg-yellow-50";
+            } else { // subtract B - A, using parallelogram for B + (-A)
+                Rx = Bx - Ax;
+                Ry = By - Ay;
+
+                drawVector(0, 0, Bx * scale, By * scale, '#dc2626', 'B');
+                drawVector(0, 0, -Ax * scale, -Ay * scale, '#8b5cf6', '-A');
+                drawVector(Bx * scale, By * scale, (Bx - Ax) * scale, (By - Ay) * scale, 'rgba(139, 92, 246, 0.6)', '', true, true);
+                drawVector(-Ax * scale, -Ay * scale, (-Ax + Bx) * scale, (-Ay + By) * scale, 'rgba(220, 38, 38, 0.6)', '', true, true);
+                drawVector(0, 0, Ax * scale, Ay * scale, 'rgba(37, 99, 235, 0.3)', 'A');
+
+                resultCard.className = "p-4 border-2 border-dashed rounded-lg border-cyan-400 bg-cyan-50";
+            }
+            
+            // Draw Resultant Vector
+            drawVector(0, 0, Rx * scale, Ry * scale, '#16a34a', 'R');
+            
+            const resultMag = Math.sqrt(Rx * Rx + Ry * Ry);
+            const resultAngleRad = Math.atan2(Ry, Rx);
+            let resultAngleDeg = resultAngleRad * (180 / Math.PI);
+            if (resultAngleDeg < 0) {
+                resultAngleDeg += 360;
+            }
+
+            resultMagEl.textContent = resultMag.toFixed(2);
+            resultAngleEl.textContent = resultAngleDeg.toFixed(2);
+        }
+        
+        function dynamicRedraw() {
+             calculateAndDraw(currentOperation);
+        }
+
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const magA = parseFloat(magAInput.value) || 0;
+            const angleARad = (parseFloat(angleAInput.value) || 0) * (Math.PI / 180);
+            const Ax = magA * Math.cos(angleARad);
+            const Ay = magA * Math.sin(angleARad);
+            const tipAx = centerX + (Ax * scale);
+            const tipAy = centerY - (Ay * scale);
+
+            const magB = parseFloat(magBInput.value) || 0;
+            const angleBRad = (parseFloat(angleBInput.value) || 0) * (Math.PI / 180);
+            const Bx = magB * Math.cos(angleBRad);
+            const By = magB * Math.sin(angleBRad);
+            const tipBx = centerX + (Bx * scale);
+            const tipBy = centerY - (By * scale);
+            
+            const hitThreshold = 15;
+            const distToA = Math.sqrt(Math.pow(mouseX - tipAx, 2) + Math.pow(mouseY - tipAy, 2));
+            const distToB = Math.sqrt(Math.pow(mouseX - tipBx, 2) + Math.pow(mouseY - tipBy, 2));
+
+            if (currentOperation) {
+                let Rx, Ry;
+                if (currentOperation === 'add') {
+                    Rx = Ax + Bx;
+                    Ry = Ay + By;
+                } else if (currentOperation === 'subtract') {
+                    Rx = Ax - Bx;
+                    Ry = Ay - By;
+                } else { // subtractBA
+                    Rx = Bx - Ax;
+                    Ry = By - Ay;
+                }
+                const tipRx = centerX + (Rx * scale);
+                const tipRy = centerY - (Ry * scale);
+                const distToR = Math.sqrt(Math.pow(mouseX - tipRx, 2) + Math.pow(mouseY - tipRy, 2));
+
+                if (distToR < hitThreshold) {
+                    draggingVector = 'R';
+                    dragStartCoords = { Ax, Ay, Bx, By };
+                    canvas.classList.add('dragging');
+                    return;
+                }
+            }
+
+            if (distToA < hitThreshold) {
+                draggingVector = 'A';
+                canvas.classList.add('dragging');
+            } else if (distToB < hitThreshold) {
+                draggingVector = 'B';
+                canvas.classList.add('dragging');
+            }
+        }
+
+        function handleMouseMove(e) {
+            if (!draggingVector) {
+                updateCursorStyle(e);
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) - centerX;
+            const mouseY = centerY - (e.clientY - rect.top);
+
+            if (draggingVector === 'A' || draggingVector === 'B') {
+                const newVx = mouseX / scale;
+                const newVy = mouseY / scale;
+
+                let newMag = Math.sqrt(newVx * newVx + newVy * newVy);
+                let newAngleDeg = Math.atan2(newVy, newVx) * (180 / Math.PI);
+                
+                if (newAngleDeg < 0) newAngleDeg += 360;
+
+                if (draggingVector === 'A') {
+                    magAInput.value = newMag.toFixed(0);
+                    angleAInput.value = newAngleDeg.toFixed(0);
+                } else if (draggingVector === 'B') {
+                    magBInput.value = newMag.toFixed(0);
+                    angleBInput.value = newAngleDeg.toFixed(0);
+                }
+            } else if (draggingVector === 'R') {
+                const newRx = mouseX / scale;
+                const newRy = mouseY / scale;
+
+                const { Ax: initialAx, Ay: initialAy, Bx: initialBx, By: initialBy } = dragStartCoords;
+
+                let initialRx, initialRy;
+                if (currentOperation === 'add') {
+                    initialRx = initialAx + initialBx;
+                    initialRy = initialAy + initialBy;
+                } else if (currentOperation === 'subtract') { // A - B
+                    initialRx = initialAx - initialBx;
+                    initialRy = initialAy - initialBy;
+                } else { // subtractBA (B - A)
+                    initialRx = initialBx - initialAx;
+                    initialRy = initialBy - initialAy;
+                }
+
+                const deltaRx = newRx - initialRx;
+                const deltaRy = newRy - initialRy;
+
+                let newAx, newAy, newBx, newBy;
+                
+                if (currentOperation === 'add') {
+                    newAx = initialAx + 0.5 * deltaRx;
+                    newAy = initialAy + 0.5 * deltaRy;
+                    newBx = initialBx + 0.5 * deltaRx;
+                    newBy = initialBy + 0.5 * deltaRy;
+                } else if (currentOperation === 'subtract') { // A - B
+                    newAx = initialAx + 0.5 * deltaRx;
+                    newAy = initialAy + 0.5 * deltaRy;
+                    newBx = initialBx - 0.5 * deltaRx;
+                    newBy = initialBy - 0.5 * deltaRy;
+                } else { // subtractBA (B - A)
+                    newBx = initialBx + 0.5 * deltaRx;
+                    newBy = initialBy + 0.5 * deltaRy;
+                    newAx = initialAx - 0.5 * deltaRx;
+                    newAy = initialAy - 0.5 * deltaRy;
+                }
+
+                let newMagA = Math.sqrt(newAx * newAx + newAy * newAy);
+                let newAngleDegA = Math.atan2(newAy, newAx) * (180 / Math.PI);
+                if (newAngleDegA < 0) newAngleDegA += 360;
+                magAInput.value = newMagA.toFixed(0);
+                angleAInput.value = newAngleDegA.toFixed(0);
+
+                let newMagB = Math.sqrt(newBx * newBx + newBy * newBy);
+                let newAngleDegB = Math.atan2(newBy, newBx) * (180 / Math.PI);
+                if (newAngleDegB < 0) newAngleDegB += 360;
+                magBInput.value = newMagB.toFixed(0);
+                angleBInput.value = newAngleDegB.toFixed(0);
+            }
+            
+            dynamicRedraw();
+        }
+
+        function handleMouseUp() {
+            draggingVector = null;
+            dragStartCoords = null;
+            canvas.classList.remove('dragging');
+        }
+
+        function updateCursorStyle(e) {
+             const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const magA = parseFloat(magAInput.value) || 0;
+            const angleARad = (parseFloat(angleAInput.value) || 0) * (Math.PI / 180);
+            const Ax = magA * Math.cos(angleARad);
+            const Ay = magA * Math.sin(angleARad);
+            const tipAx = centerX + (Ax * scale);
+            const tipAy = centerY - (Ay * scale);
+
+            const magB = parseFloat(magBInput.value) || 0;
+            const angleBRad = (parseFloat(angleBInput.value) || 0) * (Math.PI / 180);
+            const Bx = magB * Math.cos(angleBRad);
+            const By = magB * Math.sin(angleBRad);
+            const tipBx = centerX + (Bx * scale);
+            const tipBy = centerY - (By * scale);
+            
+            const hitThreshold = 15;
+            
+            if (currentOperation) {
+                let Rx, Ry;
+                if (currentOperation === 'add') {
+                    Rx = Ax + Bx;
+                    Ry = Ay + By;
+                } else if (currentOperation === 'subtract') {
+                    Rx = Ax - Bx;
+                    Ry = Ay - By;
+                } else { // subtractBA
+                    Rx = Bx - Ax;
+                    Ry = By - Ay;
+                }
+                const tipRx = centerX + (Rx * scale);
+                const tipRy = centerY - (Ry * scale);
+                const distToR = Math.sqrt(Math.pow(mouseX - tipRx, 2) + Math.pow(mouseY - tipRy, 2));
+                 if (distToR < hitThreshold) {
+                    canvas.classList.add('draggable');
+                    return;
+                }
+            }
+            
+            const distToA = Math.sqrt(Math.pow(mouseX - tipAx, 2) + Math.pow(mouseY - tipAy, 2));
+            const distToB = Math.sqrt(Math.pow(mouseX - tipBx, 2) + Math.pow(mouseY - tipBy, 2));
+
+            if (distToA < hitThreshold || distToB < hitThreshold) {
+                canvas.classList.add('draggable');
+            } else {
+                canvas.classList.remove('draggable');
+            }
+        }
+
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', dynamicRedraw);
+        
+        addBtn.addEventListener('click', () => {
+            currentOperation = 'add';
+            calculateAndDraw('add');
+        });
+        
+        subtractBtn.addEventListener('click', () => {
+            currentOperation = 'subtract';
+            calculateAndDraw('subtract');
+        });
+
+        subtractBtnBA.addEventListener('click', () => {
+            currentOperation = 'subtractBA';
+            calculateAndDraw('subtractBA');
+        });
+        
+        [magAInput, angleAInput, magBInput, angleBInput, maxMagInput].forEach(input => {
+            input.addEventListener('input', dynamicRedraw);
+        });
+
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp); // Use window to catch mouseup outside canvas
+
+        // Initial Draw
+        dynamicRedraw();
+
+    </script>
+</body>
+</html>
+
+
