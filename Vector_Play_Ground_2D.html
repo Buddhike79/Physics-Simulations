@@ -17,30 +17,6 @@
             cursor: crosshair;
             touch-action: none; /* Disables browser gestures like panning */
         }
-
-        /* NOTE: @apply only works with a Tailwind build step; if you use the CDN, prefer inline utility classes.
-           Keeping these here since they were in your original, but they won't have an effect without processing. */
-        .tab-button {
-            /* @apply py-2 px-4 font-medium text-sm rounded-lg; */
-        }
-        .tab-active {
-            /* @apply bg-indigo-600 text-white shadow; */
-        }
-        .tab-inactive {
-            /* @apply bg-gray-200 text-gray-700 hover:bg-gray-300; */
-        }
-
-        /* --- Bottom-right credit (always visible) --- */
-        .app-credit {
-            position: fixed;
-            right: 16px;
-            bottom: 8px;
-            font-size: 12px;
-            font-style: italic;
-            color: #6B7280; /* Tailwind gray-500 */
-            pointer-events: none; /* don’t block clicks */
-            z-index: 50;
-        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,7 +24,8 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-xl">
+    <!-- Add `relative` here so absolute children anchor inside the card -->
+    <div class="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-xl relative">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-4">2D Vector Calculator</h1>
 
         <!-- Tab Navigation -->
@@ -143,7 +120,6 @@
                         <h3 class="font-bold text-lg text-gray-700">Resolving Axis</h3>
                         <div>
                             <label for="slopeAngle" class="text-xs font-medium text-gray-600">Slope Angle (°)</label>
-                            <!-- This is the change you requested -->
                             <input type="number" id="slopeAngle" value="0" class="w-full p-1.5 border border-gray-300 rounded-md text-sm">
                         </div>
                     </div>
@@ -162,10 +138,12 @@
                 <canvas id="vectorCanvas" class="w-full h-96 md:h-full border border-gray-300 rounded-lg bg-white"></canvas>
             </div>
         </div>
-    </div>
 
-    <!-- Bottom-right credit -->
-    <p class="app-credit">Created by Buddhike Priyadarshana</p>
+        <!-- Bottom-right credit INSIDE the card -->
+        <p class="text-xs italic text-gray-500 absolute bottom-2 right-3 select-none">
+            Created by Buddhike Priyadarshana
+        </p>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -173,7 +151,6 @@
             const ctx = canvas.getContext('2d');
 
             // --- Get DOM Elements ---
-            // Tabs
             const tabOps = document.getElementById('tab-ops');
             const tabRes = document.getElementById('tab-res');
             const controlsOps = document.getElementById('controls-ops');
@@ -196,7 +173,6 @@
             const magVInput = document.getElementById('magV');
             const angleVInput = document.getElementById('angleV');
             const slopeAngleInput = document.getElementById('slopeAngle');
-            const resultResDiv = document.getElementById('result-res');
             const magParallelOutput = document.getElementById('magParallel');
             const magPerpOutput = document.getElementById('magPerp');
 
@@ -217,13 +193,11 @@
             let vecPerp = { mag: 0, angle: 0, x: 0, y: 0, color: '#8B5CF6' }; // Violet
             let slopeAngle = 0;
 
-            let dragging = null; // null, 'A', 'B', 'R', 'V', 'V_PARALLEL', 'V_PERP'
+            let dragging = null;
 
-            // --- Utility Functions ---
             const degToRad = (deg) => deg * (Math.PI / 180);
             const radToDeg = (rad) => rad * (180 / Math.PI);
 
-            // Update vector from Magnitude/Angle
             function updateVectorFromPolar(vec, mag, angleDeg) {
                 vec.mag = mag;
                 vec.angle = angleDeg;
@@ -232,7 +206,6 @@
                 vec.y = mag * Math.sin(angleRad);
             }
 
-            // Update vector from X/Y
             function updateVectorFromCartesian(vec, x, y) {
                 vec.x = x;
                 vec.y = y;
@@ -241,34 +214,31 @@
                 vec.angle = radToDeg(angleRad);
             }
 
-            // --- Canvas & Drawing ---
             function resizeCanvas() {
                 const rect = canvas.getBoundingClientRect();
                 width = rect.width;
                 height = rect.height;
                 canvas.width = width * dpr;
                 canvas.height = height * dpr;
+                // reset transform each resize to avoid cumulative scaling
                 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 origin.x = width / 2;
                 origin.y = height / 2;
                 draw();
             }
 
-            // Draw grid and axes
             function drawGrid() {
                 ctx.save();
-                ctx.strokeStyle = '#E5E7EB'; // Light gray
+                ctx.strokeStyle = '#E5E7EB';
                 ctx.lineWidth = 0.5;
                 const gridSize = 20 * scale;
 
-                // Vertical lines
                 for (let x = origin.x % gridSize; x < width; x += gridSize) {
                     ctx.beginPath();
                     ctx.moveTo(x, 0);
                     ctx.lineTo(x, height);
                     ctx.stroke();
                 }
-                // Horizontal lines
                 for (let y = origin.y % gridSize; y < height; y += gridSize) {
                     ctx.beginPath();
                     ctx.moveTo(0, y);
@@ -276,20 +246,17 @@
                     ctx.stroke();
                 }
 
-                // Main Axes
-                ctx.strokeStyle = '#9CA3AF'; // Medium gray
+                ctx.strokeStyle = '#9CA3AF';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(0, origin.y);
-                ctx.lineTo(width, origin.y); // X-axis
+                ctx.lineTo(width, origin.y);
                 ctx.moveTo(origin.x, 0);
-                ctx.lineTo(origin.x, height); // Y-axis
+                ctx.lineTo(origin.x, height);
                 ctx.stroke();
-                
                 ctx.restore();
             }
 
-            // Draw a single vector
             function drawVector(x, y, color, label, lineDash = []) {
                 ctx.save();
                 ctx.strokeStyle = color;
@@ -300,15 +267,13 @@
                 const startX = origin.x;
                 const startY = origin.y;
                 const endX = origin.x + x * scale;
-                const endY = origin.y - y * scale; // Invert Y for canvas coords
+                const endY = origin.y - y * scale;
 
-                // Draw line
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
 
-                // Draw arrowhead
                 const angle = Math.atan2(endY - startY, endX - startX);
                 const headLength = 10;
                 ctx.beginPath();
@@ -318,7 +283,6 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // Draw label
                 if (label) {
                     ctx.fillStyle = color;
                     ctx.font = 'bold 14px Inter';
@@ -327,7 +291,6 @@
                 ctx.restore();
             }
 
-            // Draw a vector from a custom start point
             function drawVectorFrom(startX, startY, endX, endY, color, lineDash = []) {
                 ctx.save();
                 ctx.strokeStyle = color;
@@ -340,13 +303,11 @@
                 const ex = origin.x + endX * scale;
                 const ey = origin.y - endY * scale;
 
-                // Draw line
                 ctx.beginPath();
                 ctx.moveTo(sx, sy);
                 ctx.lineTo(ex, ey);
                 ctx.stroke();
                 
-                // Draw arrowhead
                 const angle = Math.atan2(ey - sy, ex - sx);
                 const headLength = 8;
                 ctx.beginPath();
@@ -355,11 +316,9 @@
                 ctx.lineTo(ex - headLength * Math.cos(angle + Math.PI / 6), ey - headLength * Math.sin(angle + Math.PI / 6));
                 ctx.closePath();
                 ctx.fill();
-                
                 ctx.restore();
             }
 
-            // --- Core Logic ---
             function updateOpsInputs() {
                 magAInput.value = vecA.mag.toFixed(1);
                 angleAInput.value = vecA.angle.toFixed(1);
@@ -393,24 +352,18 @@
             function calculateResolution() {
                 const vAngleRad = degToRad(vecV.angle);
                 const slopeAngleRad = degToRad(slopeAngle);
-                
                 const angleDiff = vAngleRad - slopeAngleRad;
-                
                 const parallelMag = vecV.mag * Math.cos(angleDiff);
                 const perpMag = vecV.mag * Math.sin(angleDiff);
-                
                 updateVectorFromPolar(vecParallel, parallelMag, slopeAngle);
                 updateVectorFromPolar(vecPerp, perpMag, slopeAngle + 90);
-                
                 magParallelOutput.textContent = parallelMag.toFixed(1);
                 magPerpOutput.textContent = perpMag.toFixed(1);
             }
 
-            // --- Main Draw Loop ---
             function draw() {
                 ctx.clearRect(0, 0, width, height);
                 drawGrid();
-                
                 if (appMode === 'ops') {
                     drawOpsMode();
                 } else {
@@ -420,39 +373,31 @@
             
             function drawOpsMode() {
                 calculateResultant();
-                
-                // Draw A and B
                 drawVector(vecA.x, vecA.y, vecA.color, 'A');
                 drawVector(vecB.x, vecB.y, vecB.color, 'B');
-
-                // Draw helper vectors and resultant
                 if (opMode === 'add') {
                     drawVectorFrom(vecA.x, vecA.y, vecR.x, vecR.y, vecB.color, [5, 5]);
                     drawVectorFrom(vecB.x, vecB.y, vecR.x, vecR.y, vecA.color, [5, 5]);
                     drawVector(vecR.x, vecR.y, vecR.color, 'R = A + B');
                 } else if (opMode === 'sub') {
                     drawVector(vecR.x, vecR.y, vecR.color, 'R = A - B');
-                    // Draw -B
-                    drawVectorFrom(vecA.x, vecA.y, vecR.x, vecR.y, vecB.color, [5, 5]); // -B from A's tip
-                    drawVectorFrom(0, 0, -vecB.x, -vecB.y, vecB.color, [5, 5]); // -B from origin
-                    drawVectorFrom(-vecB.x, -vecB.y, vecR.x, vecR.y, vecA.color, [5, 5]); // A from -B's tip
+                    drawVectorFrom(vecA.x, vecA.y, vecR.x, vecR.y, vecB.color, [5, 5]);
+                    drawVectorFrom(0, 0, -vecB.x, -vecB.y, vecB.color, [5, 5]);
+                    drawVectorFrom(-vecB.x, -vecB.y, vecR.x, vecR.y, vecA.color, [5, 5]);
                 } else if (opMode === 'subBA') {
                     drawVector(vecR.x, vecR.y, vecR.color, 'R = B - A');
-                    // Draw -A
-                    drawVectorFrom(vecB.x, vecB.y, vecR.x, vecR.y, vecA.color, [5, 5]); // -A from B's tip
-                    drawVectorFrom(0, 0, -vecA.x, -vecA.y, vecA.color, [5, 5]); // -A from origin
-                    drawVectorFrom(-vecA.x, -vecA.y, vecR.x, vecR.y, vecB.color, [5, 5]); // B from -A's tip
+                    drawVectorFrom(vecB.x, vecB.y, vecR.x, vecR.y, vecA.color, [5, 5]);
+                    drawVectorFrom(0, 0, -vecA.x, -vecA.y, vecA.color, [5, 5]);
+                    drawVectorFrom(-vecA.x, -vecA.y, vecR.x, vecR.y, vecB.color, [5, 5]);
                 }
             }
             
             function drawResMode() {
                 calculateResolution();
-                
-                // Draw Resolving Axis
                 const axisLength = (Math.max(width, height) / scale) / 1.5;
                 const slopeRad = degToRad(slopeAngle);
                 ctx.save();
-                ctx.strokeStyle = '#6B7280'; // Gray
+                ctx.strokeStyle = '#6B7280';
                 ctx.lineWidth = 1.5;
                 ctx.setLineDash([8, 8]);
                 ctx.beginPath();
@@ -463,10 +408,8 @@
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
-                
-                // Draw Perpendicular Axis
                 const perpRad = degToRad(slopeAngle + 90);
-                ctx.strokeStyle = '#A5B4FC'; // Light Indigo
+                ctx.strokeStyle = '#A5B4FC';
                 ctx.beginPath();
                 const pstartX = origin.x - axisLength * Math.cos(perpRad);
                 const pstartY = origin.y + axisLength * Math.sin(perpRad);
@@ -476,24 +419,15 @@
                 ctx.lineTo(pendX, pendY);
                 ctx.stroke();
                 ctx.restore();
-                
-                // Draw Vectors
                 drawVector(vecV.x, vecV.y, vecV.color, 'V');
                 drawVector(vecParallel.x, vecParallel.y, vecParallel.color, 'V∥');
                 drawVector(vecPerp.x, vecPerp.y, vecPerp.color, 'V⊥');
-                
-                // Draw construction lines
                 drawVectorFrom(vecParallel.x, vecParallel.y, vecV.x, vecV.y, vecPerp.color, [2, 2]);
                 drawVectorFrom(vecPerp.x, vecPerp.y, vecV.x, vecV.y, vecParallel.color, [2, 2]);
             }
 
-            // --- Event Listeners ---
-            
-            // Tab Switching
             function switchTab(mode) {
                 appMode = mode;
-
-                // update button styles (no @apply)
                 if (mode === 'ops') {
                     tabOps.className = 'py-2 px-4 font-medium text-sm rounded-lg bg-indigo-600 text-white shadow w-1/2';
                     tabRes.className = 'py-2 px-4 font-medium text-sm rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 w-1/2';
@@ -510,7 +444,6 @@
             tabOps.addEventListener('click', () => switchTab('ops'));
             tabRes.addEventListener('click', () => switchTab('res'));
 
-            // Ops Listeners
             [magAInput, angleAInput].forEach(el => el.addEventListener('input', () => {
                 updateVectorFromPolar(vecA, parseFloat(magAInput.value), parseFloat(angleAInput.value));
                 draw();
@@ -527,7 +460,6 @@
             subtractButton.addEventListener('click', () => { opMode = 'sub'; draw(); });
             subtractBAButton.addEventListener('click', () => { opMode = 'subBA'; draw(); });
 
-            // Res Listeners
             [magVInput, angleVInput].forEach(el => el.addEventListener('input', () => {
                 updateVectorFromPolar(vecV, parseFloat(magVInput.value), parseFloat(angleVInput.value));
                 draw();
@@ -537,19 +469,17 @@
                 draw();
             });
 
-            // --- Mouse Dragging ---
             function getMousePos(evt) {
                 const rect = canvas.getBoundingClientRect();
                 const x = (evt.clientX - rect.left);
                 const y = (evt.clientY - rect.top);
-                // Convert canvas coords to world coords
                 const worldX = (x - origin.x) / scale;
                 const worldY = (origin.y - y) / scale;
                 return { x, y, worldX, worldY };
             }
 
             function getClosestVector(mouse) {
-                const threshold = 15 / scale; // 15px grab radius
+                const threshold = 15 / scale;
                 let closest = null;
                 let minDist = threshold;
 
@@ -558,33 +488,16 @@
                     const distB = Math.hypot(mouse.worldX - vecB.x, mouse.worldY - vecB.y);
                     const distR = opMode ? Math.hypot(mouse.worldX - vecR.x, mouse.worldY - vecR.y) : Infinity;
                     
-                    if (distA < minDist) {
-                        closest = 'A';
-                        minDist = distA;
-                    }
-                    if (distB < minDist) {
-                        closest = 'B';
-                        minDist = distB;
-                    }
-                    if (distR < minDist) {
-                        closest = 'R';
-                    }
-                } else if (appMode === 'res') {
+                    if (distA < minDist) { closest = 'A'; minDist = distA; }
+                    if (distB < minDist) { closest = 'B'; minDist = distB; }
+                    if (distR < minDist) { closest = 'R'; }
+                } else {
                     const distV = Math.hypot(mouse.worldX - vecV.x, mouse.worldY - vecV.y);
                     const distPara = Math.hypot(mouse.worldX - vecParallel.x, mouse.worldY - vecParallel.y);
                     const distPerp = Math.hypot(mouse.worldX - vecPerp.x, mouse.worldY - vecPerp.y);
-                    
-                    if (distV < minDist) {
-                        closest = 'V';
-                        minDist = distV;
-                    }
-                    if (distPara < minDist) {
-                        closest = 'V_PARALLEL';
-                        minDist = distPara;
-                    }
-                    if (distPerp < minDist) {
-                        closest = 'V_PERP';
-                    }
+                    if (distV < minDist) { closest = 'V'; minDist = distV; }
+                    if (distPara < minDist) { closest = 'V_PARALLEL'; minDist = distPara; }
+                    if (distPerp < minDist) { closest = 'V_PERP'; }
                 }
                 return closest;
             }
@@ -592,14 +505,11 @@
             canvas.addEventListener('mousedown', (e) => {
                 const mouse = getMousePos(e);
                 dragging = getClosestVector(mouse);
-                if (dragging) {
-                    canvas.style.cursor = 'grabbing';
-                }
+                if (dragging) canvas.style.cursor = 'grabbing';
             });
 
             canvas.addEventListener('mousemove', (e) => {
                 const mouse = getMousePos(e);
-                
                 if (dragging) {
                     canvas.style.cursor = 'grabbing';
                     if (dragging === 'A') {
@@ -618,34 +528,26 @@
                         updateVectorFromCartesian(vecV, mouse.worldX, mouse.worldY);
                         updateResInputs();
                     } else if (dragging === 'V_PARALLEL') {
-                        // Project mouse onto parallel axis
                         const slopeRad = degToRad(slopeAngle);
                         const v = { x: mouse.worldX, y: mouse.worldY };
                         const dot = v.x * Math.cos(slopeRad) + v.y * Math.sin(slopeRad);
                         const projX = dot * Math.cos(slopeRad);
                         const projY = dot * Math.sin(slopeRad);
                         updateVectorFromCartesian(vecParallel, projX, projY);
-                        
-                        // Reconstruct V
                         updateVectorFromCartesian(vecV, vecParallel.x + vecPerp.x, vecParallel.y + vecPerp.y);
                         updateResInputs();
-
                     } else if (dragging === 'V_PERP') {
-                        // Project mouse onto perpendicular axis
                         const perpRad = degToRad(slopeAngle + 90);
                         const v = { x: mouse.worldX, y: mouse.worldY };
                         const dot = v.x * Math.cos(perpRad) + v.y * Math.sin(perpRad);
                         const projX = dot * Math.cos(perpRad);
                         const projY = dot * Math.sin(perpRad);
                         updateVectorFromCartesian(vecPerp, projX, projY);
-                        
-                        // Reconstruct V
                         updateVectorFromCartesian(vecV, vecParallel.x + vecPerp.x, vecParallel.y + vecPerp.y);
                         updateResInputs();
                     }
                     draw();
                 } else {
-                    // Check for hover
                     const hoverTarget = getClosestVector(mouse);
                     canvas.style.cursor = hoverTarget ? 'grab' : 'crosshair';
                 }
@@ -661,16 +563,14 @@
                 canvas.style.cursor = 'default';
             });
             
-            // --- Initialization ---
             window.addEventListener('resize', resizeCanvas);
             
-            // Set initial values from inputs
             updateVectorFromPolar(vecA, parseFloat(magAInput.value), parseFloat(angleAInput.value));
             updateVectorFromPolar(vecB, parseFloat(magBInput.value), parseFloat(angleBInput.value));
             updateVectorFromPolar(vecV, parseFloat(magVInput.value), parseFloat(angleVInput.value));
             slopeAngle = parseFloat(slopeAngleInput.value) || 0;
 
-            resizeCanvas(); // Initial draw
+            resizeCanvas();
         });
     </script>
 </body>
