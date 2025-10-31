@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Parachute Physics Simulator</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="container mx-auto p-4 md:p-8">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-blue-700">Parachute Physics Simulator</h1>
+      <p class="text-lg text-gray-600 mt-2">See how forces, velocity, and time interact during a jump.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Controls -->
+      <div class="md:col-span-1 bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold mb-6 border-b pb-2 text-gray-700">Simulation Parameters</h2>
+        <form id="sim-form" class="space-y-5">
+          <div>
+            <div class="flex justify-between items-center">
+              <label for="jumpHeight" class="block text-sm font-medium text-gray-600">Jump Height</label>
+              <span id="jumpHeight-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">3000 m</span>
+            </div>
+            <input type="range" id="jumpHeight" min="500" max="5000" step="100" value="3000" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center">
+              <label for="deployTime" class="block text-sm font-medium text-gray-600">Parachute Deploy Time</label>
+              <span id="deployTime-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">42 s</span>
+            </div>
+            <input type="range" id="deployTime" min="5" max="100" step="1" value="42" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center">
+              <label for="jumperMass" class="block text-sm font-medium text-gray-600">Jumper Mass</label>
+              <span id="jumperMass-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">80 kg</span>
+            </div>
+            <input type="range" id="jumperMass" min="40" max="120" step="1" value="80" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center">
+              <label for="freefallArea" class="block text-sm font-medium text-gray-600">Freefall Area</label>
+              <span id="freefallArea-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">0.7 m²</span>
+            </div>
+            <input type="range" id="freefallArea" min="0.3" max="1.5" step="0.1" value="0.7" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center">
+              <label for="parachuteArea" class="block text-sm font-medium text-gray-600">Parachute Area</label>
+              <span id="parachuteArea-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">11.5 m²</span>
+            </div>
+            <input type="range" id="parachuteArea" min="5" max="40" step="0.5" value="11.5" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+          </div>
+
+          <details class="pt-2">
+            <summary class="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-800">Advanced Settings</summary>
+            <div class="mt-4 space-y-5 border-t pt-4">
+              <div>
+                <div class="flex justify-between items-center">
+                  <label for="cdFreefall" class="block text-sm font-medium text-gray-600">Drag Coeff. (Freefall)</label>
+                  <span id="cdFreefall-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">1.0</span>
+                </div>
+                <input type="range" id="cdFreefall" min="0.5" max="1.5" step="0.1" value="1.0" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              </div>
+              <div>
+                <div class="flex justify-between items-center">
+                  <label for="cdParachute" class="block text-sm font-medium text-gray-600">Drag Coeff. (Parachute)</label>
+                  <span id="cdParachute-value" class="text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">1.75</span>
+                </div>
+                <input type="range" id="cdParachute" min="1.0" max="2.5" step="0.05" value="1.75" class="mt-2 block w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              </div>
+            </div>
+          </details>
+        </form>
+      </div>
+
+      <!-- Graph & Summary -->
+      <div class="md:col-span-2 space-y-6">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+          <h2 class="text-2xl font-semibold mb-4 text-gray-700">Velocity vs. Time</h2>
+          <div class="relative h-64 md:h-96">
+            <canvas id="velocityChart"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-lg relative">
+          <h2 class="text-2xl font-semibold mb-4 text-gray-700">Jump Summary</h2>
+          <div id="summary-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <span class="block text-sm font-medium text-gray-500">Total Time</span>
+              <span id="timeToLand" class="text-2xl font-bold text-blue-700">-- s</span>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <span class="block text-sm font-medium text-gray-500">Terminal Velocity (Freefall)</span>
+              <span id="terminalVelocity" class="text-2xl font-bold text-gray-700">-- m/s</span>
+              <span id="terminalVelocityMph" class="text-sm text-gray-600">-- mph</span>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <span class="block text-sm font-medium text-gray-500">Max Freefall Velocity</span>
+              <span id="maxVelocity" class="text-2xl font-bold text-red-600">-- m/s</span>
+              <span id="maxVelocityMph" class="text-sm text-gray-600">-- mph</span>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <span class="block text-sm font-medium text-gray-500">Landing Velocity</span>
+              <span id="landingVelocity" class="text-2xl font-bold text-green-600">-- m/s</span>
+              <span id="landingVelocityMph" class="text-sm text-gray-600">-- mph</span>
+              <span id="landingStatus" class="block text-lg font-bold mt-1">--</span>
+            </div>
+          </div>
+
+          <div id="sim-message" class="text-center text-red-500 font-medium mt-4"></div>
+
+          <!-- Credit inside Jump Summary -->
+          <div aria-hidden="true" class="absolute bottom-3 right-3 text-xs italic text-gray-500 select-none">
+            Created by Buddhike Priyadarshana
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('velocityChart').getContext('2d');
+    let velocityChart = null;
+
+    // Inputs
+    const inputs = {
+      jumpHeight: { el: document.getElementById('jumpHeight'), unit: 'm', span: document.getElementById('jumpHeight-value') },
+      deployTime: { el: document.getElementById('deployTime'), unit: 's', span: document.getElementById('deployTime-value') },
+      jumperMass: { el: document.getElementById('jumperMass'), unit: 'kg', span: document.getElementById('jumperMass-value') },
+      freefallArea: { el: document.getElementById('freefallArea'), unit: 'm²', span: document.getElementById('freefallArea-value') },
+      parachuteArea: { el: document.getElementById('parachuteArea'), unit: 'm²', span: document.getElementById('parachuteArea-value') },
+      cdFreefall: { el: document.getElementById('cdFreefall'), unit: '', span: document.getElementById('cdFreefall-value') },
+      cdParachute: { el: document.getElementById('cdParachute'), unit: '', span: document.getElementById('cdParachute-value') }
+    };
+
+    // Summary elements
+    const timeToLandEl = document.getElementById('timeToLand');
+    const maxVelocityEl = document.getElementById('maxVelocity');
+    const maxVelocityMphEl = document.getElementById('maxVelocityMph');
+    const landingVelocityEl = document.getElementById('landingVelocity');
+    const landingVelocityMphEl = document.getElementById('landingVelocityMph');
+    const landingStatusEl = document.getElementById('landingStatus');
+    const terminalVelocityEl = document.getElementById('terminalVelocity');
+    const terminalVelocityMphEl = document.getElementById('terminalVelocityMph');
+    const simMessageEl = document.getElementById('sim-message');
+
+    // Constants
+    const g = 9.81;
+    const rho_sea_level = 1.225;
+    const scale_height = 8500;
+    const dt = 0.01;
+
+    // Debounce
+    let simTimeout;
+    const debouncedRunSimulation = () => {
+      clearTimeout(simTimeout);
+      simTimeout = setTimeout(runSimulation, 150);
+    };
+
+    // Initialize input displays + listeners
+    Object.keys(inputs).forEach(id => {
+      const { el, unit, span } = inputs[id];
+      if (!el || !span) return;
+      const setSpan = () => { span.textContent = el.value + (unit ? (' ' + unit) : ''); };
+      setSpan();
+      el.addEventListener('input', () => { setSpan(); debouncedRunSimulation(); });
+    });
+
+    function runSimulation() {
+      // read inputs
+      const jumpHeight = parseFloat(inputs.jumpHeight.el.value);
+      const deployTime = parseFloat(inputs.deployTime.el.value);
+      const mass = parseFloat(inputs.jumperMass.el.value);
+      const areaFreefall = parseFloat(inputs.freefallArea.el.value);
+      const areaParachute = parseFloat(inputs.parachuteArea.el.value);
+      const cdFreefall = parseFloat(inputs.cdFreefall.el.value);
+      const cdParachute = parseFloat(inputs.cdParachute.el.value);
+
+      simMessageEl.textContent = '';
+
+      // theoretical terminal velocity
+      const v_terminal_freefall = Math.sqrt((2 * mass * g) / (rho_sea_level * cdFreefall * areaFreefall));
+
+      // simulate
+      let time = 0;
+      let height = jumpHeight;
+      let velocity = 0; // downward positive
+      let acceleration = g;
+
+      const chartData = [];
+      let maxVelocity = 0;
+      let dataPushCounter = 0;
+      let safetyBreak = 0;
+
+      while (height > 0 && safetyBreak < 200000) {
+        if (time <= deployTime) maxVelocity = Math.max(maxVelocity, velocity);
+
+        const F_gravity = mass * g;
+        const currentArea = time < deployTime ? areaFreefall : areaParachute;
+        const currentCd = time < deployTime ? cdFreefall : cdParachute;
+        const currentRho = rho_sea_level * Math.exp(-height / scale_height);
+        const F_drag = 0.5 * currentRho * (velocity * Math.abs(velocity)) * currentCd * currentArea;
+        const F_net = F_gravity - F_drag;
+        acceleration = F_net / mass;
+
+        if (dataPushCounter % 10 === 0) {
+          chartData.push({
+            x: parseFloat(time.toFixed(1)),
+            y: parseFloat(velocity.toFixed(2)),
+            accel: parseFloat(acceleration.toFixed(2)),
+            force: parseFloat(F_net.toFixed(1))
+          });
+        }
+        dataPushCounter++;
+
+        velocity += acceleration * dt;
+        height -= velocity * dt;
+        time += dt;
+        safetyBreak++;
+      }
+
+      if (safetyBreak >= 200000) {
+        simMessageEl.textContent = "Simulation timed out. Check parameters (e.g., jump height or drag).";
+      }
+
+      const landingVelocity = velocity;
+      const timeToLand = time - dt;
+      const mpsToMph = 2.23694;
+
+      // update summary UI
+      timeToLandEl.textContent = `${timeToLand.toFixed(1)} s`;
+      terminalVelocityEl.textContent = `${v_terminal_freefall.toFixed(1)} m/s`;
+      terminalVelocityMphEl.textContent = `(${(v_terminal_freefall * mpsToMph).toFixed(1)} mph)`;
+      maxVelocityEl.textContent = `${maxVelocity.toFixed(1)} m/s`;
+      maxVelocityMphEl.textContent = `(${(maxVelocity * mpsToMph).toFixed(1)} mph)`;
+      landingVelocityEl.textContent = `${landingVelocity.toFixed(1)} m/s`;
+      landingVelocityMphEl.textContent = `(${(landingVelocity * mpsToMph).toFixed(1)} mph)`;
+
+      const safeVelocityThreshold = 9.0;
+      if (landingVelocity <= safeVelocityThreshold) {
+        landingStatusEl.textContent = "Safe Landing";
+        landingStatusEl.className = "block text-lg font-bold mt-1 text-green-600";
+      } else {
+        landingStatusEl.textContent = "Dangerous Landing!";
+        landingStatusEl.className = "block text-lg font-bold mt-1 text-red-600";
+      }
+
+      updateChart(chartData, deployTime);
+    }
+
+    function updateChart(chartData, deployTime) {
+      // compute y-range
+      const yValues = chartData.map(d => d.y);
+      const yMax = (yValues.length ? Math.max(...yValues) : 10) + 2;
+      const yMin = (yValues.length ? Math.min(...yValues) : 0) - 1;
+
+      // prepare deploy vertical line dataset (two points at same x)
+      const deployLine = [
+        { x: deployTime, y: yMin },
+        { x: deployTime, y: yMax }
+      ];
+
+      // main dataset (velocity)
+      const mainDataset = {
+        label: 'Velocity (m/s)',
+        data: chartData,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.12)',
+        fill: true,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0
+      };
+
+      const deployDataset = {
+        label: 'Deploy',
+        data: deployLine,
+        borderColor: 'rgb(255,99,132)',
+        borderWidth: 2,
+        borderDash: [6,6],
+        pointRadius: 0,
+        fill: false,
+        tension: 0
+      };
+
+      if (velocityChart) {
+        velocityChart.destroy();
+        velocityChart = null;
+      }
+
+      velocityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [ mainDataset, deployDataset ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'Time (seconds)', font: { size: 14 } },
+              ticks: { maxTicksLimit: 10 }
+            },
+            y: {
+              title: { display: true, text: 'Velocity (m/s)', font: { size: 14 } },
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                title: ctxItems => {
+                  return `Time: ${ctxItems[0].parsed.x} s`;
+                },
+                label: ctxItem => {
+                  // show velocity for main dataset
+                  return `${ctxItem.dataset.label}: ${ctxItem.parsed.y.toFixed(2)} m/s`;
+                },
+                afterLabel: ctxItem => {
+                  // find original object if present
+                  if (ctxItem.raw && ctxItem.raw.accel !== undefined) {
+                    return `Acceleration: ${ctxItem.raw.accel} m/s²\nNet Force (Down): ${ctxItem.raw.force} N`;
+                  }
+                  return null;
+                }
+              }
+            }
+          },
+          animation: { duration: 300 }
+        }
+      });
+    }
+
+    // initial run
+    runSimulation();
+  });
+  </script>
+</body>
+</html>
