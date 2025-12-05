@@ -133,15 +133,19 @@
 
             // --- Graph Plotting Logic (SVG) ---
             const graphWidth = 1000;
-            const graphHeight = 300;
-            const padding = 50;
+            const graphHeight = 210; // Reduced height
+            
+            // Asymmetric Padding to remove top space
+            const paddingTop = 20;
+            const paddingBottom = 30;
+            const paddingX = 50;
             
             // Scales
             const maxTimeGraph = Math.max(totalTime * 1.2, 5);
             const maxVelGraph = Math.max(velocityMs * 1.2, 20);
 
-            const timeToX = (t) => padding + (t / maxTimeGraph) * (graphWidth - 2 * padding);
-            const velToY = (v) => (graphHeight - padding) - (v / maxVelGraph) * (graphHeight - 2 * padding);
+            const timeToX = (t) => paddingX + (t / maxTimeGraph) * (graphWidth - 2 * paddingX);
+            const velToY = (v) => (graphHeight - paddingBottom) - (v / maxVelGraph) * (graphHeight - paddingBottom - paddingTop);
 
             // Points for V vs T graph
             const p1 = { x: timeToX(0), y: velToY(velocityMs) };
@@ -378,10 +382,10 @@
                         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
                             <line 
                             key={ratio}
-                            x1={padding} 
-                            y1={padding + ratio * (graphHeight - 2 * padding)} 
-                            x2={graphWidth} 
-                            y2={padding + ratio * (graphHeight - 2 * padding)} 
+                            x1={paddingX} 
+                            y1={paddingTop + ratio * (graphHeight - paddingBottom - paddingTop)} 
+                            x2={graphWidth - paddingX} 
+                            y2={paddingTop + ratio * (graphHeight - paddingBottom - paddingTop)} 
                             stroke="#e2e8f0" 
                             strokeDasharray="4"
                             />
@@ -391,10 +395,10 @@
                             {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
                             <line 
                             key={ratio}
-                            x1={padding + ratio * (graphWidth - 2 * padding)} 
-                            y1={padding} 
-                            x2={padding + ratio * (graphWidth - 2 * padding)} 
-                            y2={graphHeight - padding} 
+                            x1={paddingX + ratio * (graphWidth - 2 * paddingX)} 
+                            y1={paddingTop} 
+                            x2={paddingX + ratio * (graphWidth - 2 * paddingX)} 
+                            y2={graphHeight - paddingBottom} 
                             stroke="#e2e8f0" 
                             strokeDasharray="4"
                             />
@@ -403,32 +407,32 @@
                         {/* Main Axes Lines (Added for visibility) */}
                         {/* Vertical Axis (Velocity) */}
                         <line 
-                            x1={padding} 
-                            y1={padding} 
-                            x2={padding} 
-                            y2={graphHeight - padding} 
+                            x1={paddingX} 
+                            y1={paddingTop} 
+                            x2={paddingX} 
+                            y2={graphHeight - paddingBottom} 
                             stroke="#475569" 
                             strokeWidth="2"
                         />
                         {/* Horizontal Axis (Time) */}
                         <line 
-                            x1={padding} 
-                            y1={graphHeight - padding} 
-                            x2={graphWidth - padding} 
-                            y2={graphHeight - padding} 
+                            x1={paddingX} 
+                            y1={graphHeight - paddingBottom} 
+                            x2={graphWidth - paddingX} 
+                            y2={graphHeight - paddingBottom} 
                             stroke="#475569" 
                             strokeWidth="2"
                         />
                         
                         {/* Arrowheads */}
                         {/* Vertical Axis Arrowhead (Up) */}
-                        <polygon points={`${padding},${padding} ${padding - 5},${padding + 10} ${padding + 5},${padding + 10}`} fill="#475569" />
+                        <polygon points={`${paddingX},${paddingTop} ${paddingX - 5},${paddingTop + 10} ${paddingX + 5},${paddingTop + 10}`} fill="#475569" />
 
                         {/* Horizontal Axis Arrowhead (Right) */}
-                        <polygon points={`${graphWidth - padding},${graphHeight - padding} ${graphWidth - padding - 10},${graphHeight - padding - 5} ${graphWidth - padding - 10},${graphHeight - padding + 5}`} fill="#475569" />
+                        <polygon points={`${graphWidth - paddingX},${graphHeight - paddingBottom} ${graphWidth - paddingX - 10},${graphHeight - paddingBottom - 5} ${graphWidth - paddingX - 10},${graphHeight - paddingBottom + 5}`} fill="#475569" />
 
                         {/* Axes Labels */}
-                        <text x={graphWidth / 2} y={graphHeight - 10} textAnchor="middle" className="text-xs fill-slate-500 font-bold">Time (s)</text>
+                        <text x={graphWidth / 2} y={graphHeight - 5} textAnchor="middle" className="text-xs fill-slate-500 font-bold">Time (s)</text>
                         <text x={15} y={graphHeight / 2} textAnchor="middle" transform={`rotate(-90, 15, ${graphHeight/2})`} className="text-xs fill-slate-500 font-bold">Velocity (m/s)</text>
 
                         {/* The Plot Line */}
@@ -449,19 +453,19 @@
                         {/* Detailed Annotations */}
                         
                         {/* t=0 Marker */}
-                        <line x1={p1.x} y1={p1.y} x2={p1.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
-                        <text x={p1.x} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-800 font-bold">t=0: Sees Boy</text>
+                        <line x1={p1.x} y1={p1.y} x2={p1.x} y2={graphHeight - paddingBottom + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                        <text x={p1.x} y={graphHeight - paddingBottom + 20} textAnchor="middle" className="text-[10px] fill-slate-800 font-bold">t=0: Sees Boy</text>
 
                         {/* Reaction Phase Label */}
                         <text x={(p1.x + p2.x) / 2} y={p1.y - 10} textAnchor="middle" className="text-[10px] fill-amber-600 font-bold">Reaction Phase</text>
                         <text x={(p1.x + p2.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-amber-600 opacity-60">Area = d1</text>
-                        <line x1={p2.x} y1={p2.y} x2={p2.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                        <line x1={p2.x} y1={p2.y} x2={p2.x} y2={graphHeight - paddingBottom + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
                         
                         {/* Brakes Applied Label - Rotated Vertically */}
                         <text 
                             x={p2.x + 5} 
-                            y={graphHeight - padding - 5} 
-                            transform={`rotate(-90, ${p2.x + 5}, ${graphHeight - padding - 5})`}
+                            y={graphHeight - paddingBottom - 5} 
+                            transform={`rotate(-90, ${p2.x + 5}, ${graphHeight - paddingBottom - 5})`}
                             textAnchor="start" 
                             className="text-[10px] fill-slate-800 font-bold"
                         >
@@ -473,7 +477,7 @@
                         <text x={(p2.x + p3.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-blue-600 opacity-60">Area = d2</text>
                         
                         {/* Stop Marker */}
-                        <text x={Math.min(p3.x, graphWidth - 20)} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Stopped ({totalTime.toFixed(1)}s)</text>
+                        <text x={Math.min(p3.x, graphWidth - 20)} y={graphHeight - paddingBottom + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Stopped ({totalTime.toFixed(1)}s)</text>
 
                         {/* Velocity Value */}
                         <text x={p1.x - 5} y={p1.y} textAnchor="end" alignmentBaseline="middle" className="text-[10px] fill-slate-600 font-mono">{velocityMs.toFixed(1)} m/s</text>
