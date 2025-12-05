@@ -1,419 +1,462 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, CheckCircle, RefreshCcw, Car, User } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braking Physics Simulator</title>
+    
+    <!-- 1. Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Load React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Load Babel to handle JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
 
-const BrakingSimulator = () => {
-  // --- State ---
-  const [velocityKmh, setVelocityKmh] = useState(60); // km/h
-  const [reactionTime, setReactionTime] = useState(1.0); // seconds
-  const [distanceToBoy, setDistanceToBoy] = useState(50); // meters
-  const [deceleration, setDeceleration] = useState(6); // m/s^2
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-  // --- Animation State ---
-  const [animTime, setAnimTime] = useState(0);
-  const startTimeRef = useRef(null);
-  const animationFrameRef = useRef(null);
+        // --- Inline Icons (replacing lucide-react imports) ---
+        const AlertTriangle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        );
+        const CheckCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+        );
+        const RefreshCcw = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+        );
+        const CarIcon = ({ className, style }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M2 12h12"/></svg>
+        );
+        const User = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        );
 
-  // --- Physics Calculations ---
-  // Convert km/h to m/s
-  const velocityMs = velocityKmh / 3.6;
+        // --- Main Component ---
+        const BrakingSimulator = () => {
+            // --- State ---
+            const [velocityKmh, setVelocityKmh] = useState(60); // km/h
+            const [reactionTime, setReactionTime] = useState(1.0); // seconds
+            const [distanceToBoy, setDistanceToBoy] = useState(50); // meters
+            const [deceleration, setDeceleration] = useState(6); // m/s^2
 
-  // Phase 1: Reaction
-  const reactionDistance = velocityMs * reactionTime;
+            // --- Animation State ---
+            const [animTime, setAnimTime] = useState(0);
+            const startTimeRef = useRef(null);
+            const animationFrameRef = useRef(null);
 
-  // Phase 2: Braking (v^2 = u^2 + 2as => s = u^2 / 2a)
-  // Prevent division by zero
-  const safeDeceleration = Math.max(0.1, deceleration);
-  const brakingDistance = (velocityMs * velocityMs) / (2 * safeDeceleration);
-  const brakingTime = velocityMs / safeDeceleration;
+            // --- Physics Calculations ---
+            // Convert km/h to m/s
+            const velocityMs = velocityKmh / 3.6;
 
-  // Totals
-  const totalStoppingDistance = reactionDistance + brakingDistance;
-  const totalTime = reactionTime + brakingTime;
+            // Phase 1: Reaction
+            const reactionDistance = velocityMs * reactionTime;
 
-  // Outcome
-  const isSafe = totalStoppingDistance < distanceToBoy;
-  const collisionSpeed = isSafe 
-    ? 0 
-    : Math.sqrt(Math.max(0, (velocityMs * velocityMs) - 2 * safeDeceleration * (distanceToBoy - reactionDistance)));
+            // Phase 2: Braking (v^2 = u^2 + 2as => s = u^2 / 2a)
+            // Prevent division by zero
+            const safeDeceleration = Math.max(0.1, deceleration);
+            const brakingDistance = (velocityMs * velocityMs) / (2 * safeDeceleration);
+            const brakingTime = velocityMs / safeDeceleration;
 
-  // "Required" Calculation
-  const distAvailableForBraking = distanceToBoy - reactionDistance;
-  let requiredDeceleration = 0;
-  let impossibleToSave = false;
+            // Totals
+            const totalStoppingDistance = reactionDistance + brakingDistance;
+            const totalTime = reactionTime + brakingTime;
 
-  if (distAvailableForBraking <= 0) {
-    impossibleToSave = true; // Hit during reaction time
-  } else {
-    requiredDeceleration = (velocityMs * velocityMs) / (2 * distAvailableForBraking);
-  }
+            // Outcome
+            const isSafe = totalStoppingDistance < distanceToBoy;
+            const collisionSpeed = isSafe 
+                ? 0 
+                : Math.sqrt(Math.max(0, (velocityMs * velocityMs) - 2 * safeDeceleration * (distanceToBoy - reactionDistance)));
 
-  // --- Animation Loop ---
-  useEffect(() => {
-    const animate = (timestamp) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = (timestamp - startTimeRef.current) / 1000; // seconds
+            // "Required" Calculation
+            const distAvailableForBraking = distanceToBoy - reactionDistance;
+            let requiredDeceleration = 0;
+            let impossibleToSave = false;
 
-      setAnimTime(elapsed);
+            if (distAvailableForBraking <= 0) {
+                impossibleToSave = true; // Hit during reaction time
+            } else {
+                requiredDeceleration = (velocityMs * velocityMs) / (2 * distAvailableForBraking);
+            }
 
-      // Loop condition: Run for totalTime + 2s pause, then restart
-      if (elapsed < totalTime + 2) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        startTimeRef.current = null; // Reset start time for next loop
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
+            // --- Animation Loop ---
+            useEffect(() => {
+                const animate = (timestamp) => {
+                if (!startTimeRef.current) startTimeRef.current = timestamp;
+                const elapsed = (timestamp - startTimeRef.current) / 1000; // seconds
 
-    // Start
-    animationFrameRef.current = requestAnimationFrame(animate);
+                setAnimTime(elapsed);
 
-    // Cleanup
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      startTimeRef.current = null;
-      setAnimTime(0);
-    };
-  }, [velocityMs, reactionTime, safeDeceleration, totalTime, distanceToBoy]);
+                // Loop condition: Run for totalTime + 2s pause, then restart
+                if (elapsed < totalTime + 2) {
+                    animationFrameRef.current = requestAnimationFrame(animate);
+                } else {
+                    startTimeRef.current = null; // Reset start time for next loop
+                    animationFrameRef.current = requestAnimationFrame(animate);
+                }
+                };
 
-  // --- Calculate Car Position for Animation ---
-  let carPosition = 0;
-  const timeToUse = Math.min(animTime, totalTime); // Cap time at stop time
+                // Start
+                animationFrameRef.current = requestAnimationFrame(animate);
 
-  if (timeToUse <= reactionTime) {
-    // Reaction Phase: Constant velocity
-    carPosition = velocityMs * timeToUse;
-  } else {
-    // Braking Phase: Constant deceleration
-    const brakingElapsed = timeToUse - reactionTime;
-    carPosition = reactionDistance + (velocityMs * brakingElapsed - 0.5 * safeDeceleration * brakingElapsed * brakingElapsed);
-  }
-  // Cap position at the final stopping distance
-  carPosition = Math.min(carPosition, totalStoppingDistance);
+                // Cleanup
+                return () => {
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                }
+                startTimeRef.current = null;
+                setAnimTime(0);
+                };
+            }, [velocityMs, reactionTime, safeDeceleration, totalTime, distanceToBoy]);
+
+            // --- Calculate Car Position for Animation ---
+            let carPosition = 0;
+            const timeToUse = Math.min(animTime, totalTime); // Cap time at stop time
+
+            if (timeToUse <= reactionTime) {
+                // Reaction Phase: Constant velocity
+                carPosition = velocityMs * timeToUse;
+            } else {
+                // Braking Phase: Constant deceleration
+                const brakingElapsed = timeToUse - reactionTime;
+                carPosition = reactionDistance + (velocityMs * brakingElapsed - 0.5 * safeDeceleration * brakingElapsed * brakingElapsed);
+            }
+            // Cap position at the final stopping distance
+            carPosition = Math.min(carPosition, totalStoppingDistance);
 
 
-  // --- Graph Plotting Logic (SVG) ---
-  const graphWidth = 1000;
-  const graphHeight = 300;
-  const padding = 50;
-  
-  // Scales
-  const maxTimeGraph = Math.max(totalTime * 1.2, 5);
-  const maxVelGraph = Math.max(velocityMs * 1.2, 20);
+            // --- Graph Plotting Logic (SVG) ---
+            const graphWidth = 1000;
+            const graphHeight = 300;
+            const padding = 50;
+            
+            // Scales
+            const maxTimeGraph = Math.max(totalTime * 1.2, 5);
+            const maxVelGraph = Math.max(velocityMs * 1.2, 20);
 
-  const timeToX = (t) => padding + (t / maxTimeGraph) * (graphWidth - 2 * padding);
-  const velToY = (v) => (graphHeight - padding) - (v / maxVelGraph) * (graphHeight - 2 * padding);
+            const timeToX = (t) => padding + (t / maxTimeGraph) * (graphWidth - 2 * padding);
+            const velToY = (v) => (graphHeight - padding) - (v / maxVelGraph) * (graphHeight - 2 * padding);
 
-  // Points for V vs T graph
-  const p1 = { x: timeToX(0), y: velToY(velocityMs) };
-  const p2 = { x: timeToX(reactionTime), y: velToY(velocityMs) };
-  const p3 = { x: timeToX(totalTime), y: velToY(0) };
-  const yBase = velToY(0);
+            // Points for V vs T graph
+            const p1 = { x: timeToX(0), y: velToY(velocityMs) };
+            const p2 = { x: timeToX(reactionTime), y: velToY(velocityMs) };
+            const p3 = { x: timeToX(totalTime), y: velToY(0) };
+            const yBase = velToY(0);
 
-  // Areas under the curve
-  const reactionAreaPoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p2.x},${yBase} ${p1.x},${yBase}`;
-  const brakingAreaPoints = `${p2.x},${p2.y} ${p3.x},${p3.y} ${p3.x},${yBase} ${p2.x},${yBase}`;
+            // Areas under the curve
+            const reactionAreaPoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p2.x},${yBase} ${p1.x},${yBase}`;
+            const brakingAreaPoints = `${p2.x},${p2.y} ${p3.x},${p3.y} ${p3.x},${yBase} ${p2.x},${yBase}`;
 
-  // Line points
-  const polylinePoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
+            // Line points
+            const polylinePoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
 
-  // --- Visual Alignment Constants ---
-  // We use 3rem as the "Zero" mark so the car (width 2rem) can sit behind it at start.
-  const startOffset = "3rem"; 
+            // --- Visual Alignment Constants ---
+            const startOffset = "3rem"; 
 
-  return (
-    <div className="flex flex-col items-center justify-start min-h-screen bg-slate-50 p-4 font-sans text-slate-800 relative">
-      
-      {/* Main Container */}
-      <div className="w-full max-w-6xl space-y-4">
+            return (
+                <div className="flex flex-col items-center justify-start min-h-screen bg-slate-50 p-4 font-sans text-slate-800 relative">
+                
+                {/* Main Container */}
+                <div className="w-full max-w-6xl space-y-4">
 
-        {/* 1. Header / Status Banner */}
-        <div className={`w-full rounded-xl shadow-sm p-4 transition-colors duration-500 ${isSafe ? 'bg-emerald-100 border border-emerald-400' : 'bg-red-100 border border-red-400'}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {isSafe ? <CheckCircle className="w-8 h-8 text-emerald-600" /> : <AlertTriangle className="w-8 h-8 text-red-600" />}
-              <div>
-                <h1 className={`text-2xl font-bold ${isSafe ? 'text-emerald-800' : 'text-red-800'}`}>
-                  {isSafe ? "SAFE STOP" : "COLLISION DETECTED"}
-                </h1>
-                <p className="text-sm text-slate-700">
-                  {isSafe 
-                    ? `Stopped ${ (distanceToBoy - totalStoppingDistance).toFixed(1) }m before boy.` 
-                    : impossibleToSave 
-                      ? "Hit during reaction time!"
-                      : `Impact Speed: ${(collisionSpeed * 3.6).toFixed(1)} km/h`
-                  }
-                </p>
-              </div>
-            </div>
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Stopping Dist.</div>
-              <div className="text-3xl font-mono font-bold text-slate-800">{totalStoppingDistance.toFixed(1)}m</div>
-            </div>
-          </div>
-        </div>
+                    {/* 1. Header / Status Banner */}
+                    <div className={`w-full rounded-xl shadow-sm p-4 transition-colors duration-500 ${isSafe ? 'bg-emerald-100 border border-emerald-400' : 'bg-red-100 border border-red-400'}`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                        {isSafe ? <CheckCircle className="w-8 h-8 text-emerald-600" /> : <AlertTriangle className="w-8 h-8 text-red-600" />}
+                        <div>
+                            <h1 className={`text-2xl font-bold ${isSafe ? 'text-emerald-800' : 'text-red-800'}`}>
+                            {isSafe ? "SAFE STOP" : "COLLISION DETECTED"}
+                            </h1>
+                            <p className="text-sm text-slate-700">
+                            {isSafe 
+                                ? `Stopped ${ (distanceToBoy - totalStoppingDistance).toFixed(1) }m before boy.` 
+                                : impossibleToSave 
+                                ? "Hit during reaction time!"
+                                : `Impact Speed: ${(collisionSpeed * 3.6).toFixed(1)} km/h`
+                            }
+                            </p>
+                        </div>
+                        </div>
+                        <div className="text-right hidden sm:block">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Stopping Dist.</div>
+                        <div className="text-3xl font-mono font-bold text-slate-800">{totalStoppingDistance.toFixed(1)}m</div>
+                        </div>
+                    </div>
+                    </div>
 
-        {/* 2. Top Section: Controls & Analysis Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          
-          {/* Left Column: Controls */}
-          <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
-            <h2 className="text-md font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2 mb-4">
-              <RefreshCcw className="w-4 h-4" />
-              Physics Parameters
-            </h2>
+                    {/* 2. Top Section: Controls & Analysis Split */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    
+                    {/* Left Column: Controls */}
+                    <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+                        <h2 className="text-md font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-2 mb-4">
+                        <RefreshCcw className="w-4 h-4" />
+                        Physics Parameters
+                        </h2>
 
-            {/* Velocity Control */}
-            <div className="space-y-2 mb-5">
-              <div className="flex justify-between items-end">
-                <div>
-                  <label className="text-sm font-bold text-slate-700 block">Initial Velocity (u)</label>
-                  <span className="text-[10px] text-slate-500 block">SI Unit: {velocityMs.toFixed(1)} m/s</span>
+                        {/* Velocity Control */}
+                        <div className="space-y-2 mb-5">
+                        <div className="flex justify-between items-end">
+                            <div>
+                            <label className="text-sm font-bold text-slate-700 block">Initial Velocity (u)</label>
+                            <span className="text-[10px] text-slate-500 block">SI Unit: {velocityMs.toFixed(1)} m/s</span>
+                            </div>
+                            <span className="font-mono text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">{velocityKmh} km/h</span>
+                        </div>
+                        <input 
+                            type="range" min="10" max="150" step="1" 
+                            value={velocityKmh} 
+                            onChange={(e) => setVelocityKmh(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        </div>
+
+                        {/* Reaction Time Control */}
+                        <div className="space-y-2 mb-5">
+                        <div className="flex justify-between items-end">
+                            <div>
+                            <label className="text-sm font-bold text-slate-700 block">Reaction Time (t_react)</label>
+                            <span className="text-[10px] text-slate-500 block">Thinking Dist: d1 = u × t</span>
+                            </div>
+                            <span className="font-mono text-sm text-amber-600 bg-amber-50 px-2 py-1 rounded">{reactionTime} s</span>
+                        </div>
+                        <input 
+                            type="range" min="0.1" max="3.0" step="0.1" 
+                            value={reactionTime} 
+                            onChange={(e) => setReactionTime(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                        />
+                        </div>
+
+                        {/* Deceleration Control */}
+                        <div className="space-y-2 mb-5">
+                        <div className="flex justify-between items-end">
+                            <div>
+                            <label className="text-sm font-bold text-slate-700 block">Deceleration (a)</label>
+                            <span className="text-[10px] text-slate-500 block">Braking Dist: d2 = u² / 2a</span>
+                            </div>
+                            <span className="font-mono text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded">{deceleration} m/s²</span>
+                        </div>
+                        <input 
+                            type="range" min="1" max="15" step="0.5" 
+                            value={deceleration} 
+                            onChange={(e) => setDeceleration(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600"
+                        />
+                        <div className="text-[10px] text-slate-400 flex justify-between mt-1">
+                            <span>Wet (μ≈0.4)</span><span>Dry (μ≈0.7)</span><span>Sport (μ&gt;1.0)</span>
+                        </div>
+                        </div>
+
+                        {/* Distance Control */}
+                        <div className="space-y-2">
+                        <div className="flex justify-between items-end">
+                            <div>
+                            <label className="text-sm font-bold text-slate-700 block">Target Separation (s)</label>
+                            <span className="text-[10px] text-slate-500 block">Condition: d_total &lt; s</span>
+                            </div>
+                            <span className="font-mono text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded">{distanceToBoy} m</span>
+                        </div>
+                        <input 
+                            type="range" min="10" max="200" step="1" 
+                            value={distanceToBoy} 
+                            onChange={(e) => setDistanceToBoy(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                        </div>
+                    </div>
+
+                    {/* Right Column: Visual & Stats (Stacked) */}
+                    <div className="lg:col-span-8 flex flex-col gap-4">
+                        
+                        {/* Visual Representation (Road) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-center h-1/2 min-h-[140px] relative">
+                        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Simulation Visual</h3>
+                        
+                        <div className="relative w-full h-24 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden mb-2">
+                            
+                            {/* Distance Markers (Scale) */}
+                            <div className="absolute bottom-0 w-full border-t border-slate-300 h-4">
+                                {[0, 50, 100, 150, 200].map((dist) => (
+                                <div key={dist} className="absolute top-0 h-2 border-l border-slate-400" style={{ left: `calc(${startOffset} + ${(dist / 200) * 100}%)` }}>
+                                    <span className="absolute top-3 left-0 -translate-x-1/2 text-[9px] text-slate-500 font-mono">{dist}m</span>
+                                </div>
+                                ))}
+                            </div>
+
+                            {/* Reaction Zone (Static Background) */}
+                            <div 
+                                className="absolute top-8 h-6 bg-amber-300 opacity-40 border-l border-slate-400"
+                                style={{ 
+                                left: startOffset,
+                                width: `${(reactionDistance / 200) * 100}%` 
+                                }}
+                            ></div>
+
+                            {/* Braking Zone (Static Background) */}
+                            <div 
+                                className="absolute top-8 h-6 bg-blue-400 opacity-40"
+                                style={{ 
+                                left: `calc(${startOffset} + ${(reactionDistance / 200) * 100}%)`,
+                                width: `${(brakingDistance / 200) * 100}%` 
+                                }}
+                            ></div>
+
+                            {/* The Boy (Static Target) */}
+                            <div 
+                                className="absolute top-4 flex flex-col items-center"
+                                style={{ left: `calc(${startOffset} + ${(distanceToBoy / 200) * 100}%)`, zIndex: 20 }}
+                            >
+                                <User className={`w-8 h-8 ${isSafe ? 'text-slate-600' : 'text-red-600 animate-pulse'}`} />
+                                <div className="h-12 w-px border-l border-dashed border-slate-400"></div>
+                            </div>
+
+                            {/* The Car - Animated with Front Alignment */}
+                            <CarIcon 
+                                className="absolute top-6 w-8 h-8 text-slate-800 z-30 transform -translate-x-full"
+                                style={{ left: `calc(${startOffset} + ${(carPosition / 200) * 100}%)` }}
+                            />
+                            
+                            {/* Start Line Marker */}
+                            <div className="absolute top-6 bottom-0 w-px border-l border-dashed border-slate-300" style={{ left: startOffset }}></div>
+
+                        </div>
+
+                        <div className="flex gap-6 text-[11px] text-slate-500 justify-center">
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-amber-300 rounded-sm opacity-60"></div>Reaction Zone</div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-400 rounded-sm opacity-60"></div>Braking Zone</div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-800 rounded-sm"></div>Car (Front aligned)</div>
+                        </div>
+                        </div>
+
+                        {/* Physics Data (Stats) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-1/2 min-h-[140px] flex items-center">
+                        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Reaction Dist. (d1)</span>
+                                <span className="font-mono text-amber-600 font-bold text-lg">{reactionDistance.toFixed(1)}m</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Braking Dist. (d2)</span>
+                                <span className="font-mono text-blue-600 font-bold text-lg">{brakingDistance.toFixed(1)}m</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Total Time (t)</span>
+                                <span className="font-mono text-slate-700 font-bold text-lg">{totalTime.toFixed(2)}s</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Req. Decel (a_req)</span>
+                                <span className="font-mono text-slate-900 font-bold text-lg">
+                                {impossibleToSave ? "N/A" : `${requiredDeceleration.toFixed(1)} m/s²`}
+                                </span>
+                            </div>
+                        </div>
+                        </div>
+
+                    </div>
+                    </div>
+
+                    {/* 3. Bottom Section: Graph (Full Width) */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
+                    <h2 className="text-md font-bold text-slate-700 mb-2 pl-2 border-l-4 border-blue-500">Velocity vs. Time Graph (v vs t)</h2>
+                    
+                    <div className="w-full flex justify-center overflow-hidden">
+                        <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full border-l border-b border-slate-300 bg-slate-50 max-h-[300px]" preserveAspectRatio="none">
+                        
+                        {/* Areas under Curve */}
+                        <polygon points={reactionAreaPoints} fill="#fcd34d" fillOpacity="0.2" />
+                        <polygon points={brakingAreaPoints} fill="#60a5fa" fillOpacity="0.2" />
+
+                        {/* Grid Lines Y */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                            <line 
+                            key={ratio}
+                            x1={padding} 
+                            y1={padding + ratio * (graphHeight - 2 * padding)} 
+                            x2={graphWidth} 
+                            y2={padding + ratio * (graphHeight - 2 * padding)} 
+                            stroke="#e2e8f0" 
+                            strokeDasharray="4"
+                            />
+                        ))}
+
+                            {/* Grid Lines X */}
+                            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                            <line 
+                            key={ratio}
+                            x1={padding + ratio * (graphWidth - 2 * padding)} 
+                            y1={padding} 
+                            x2={padding + ratio * (graphWidth - 2 * padding)} 
+                            y2={graphHeight - padding} 
+                            stroke="#e2e8f0" 
+                            strokeDasharray="4"
+                            />
+                        ))}
+
+                        {/* Axes Labels */}
+                        <text x={graphWidth / 2} y={graphHeight - 10} textAnchor="middle" className="text-xs fill-slate-500 font-bold">Time (s)</text>
+                        <text x={15} y={graphHeight / 2} textAnchor="middle" transform={`rotate(-90, 15, ${graphHeight/2})`} className="text-xs fill-slate-500 font-bold">Velocity (m/s)</text>
+
+                        {/* The Plot Line */}
+                        <polyline 
+                            points={polylinePoints} 
+                            fill="none" 
+                            stroke={isSafe ? "#10b981" : "#ef4444"} 
+                            strokeWidth="4" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                        />
+
+                        {/* Impact Point Marker (if collision) */}
+                        {!isSafe && !impossibleToSave && (
+                            <circle cx={timeToX(reactionTime + (distanceToBoy - reactionDistance) / velocityMs * 2)} cy={velToY(collisionSpeed)} r="6" fill="#ef4444" />
+                        )}
+
+                        {/* Detailed Annotations */}
+                        
+                        {/* t=0 Marker */}
+                        <line x1={p1.x} y1={p1.y} x2={p1.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                        <text x={p1.x} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-800 font-bold">t=0: Sees Boy</text>
+
+                        {/* Reaction Phase Label */}
+                        <text x={(p1.x + p2.x) / 2} y={p1.y - 10} textAnchor="middle" className="text-[10px] fill-amber-600 font-bold">Reaction Phase</text>
+                        <text x={(p1.x + p2.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-amber-600 opacity-60">Area = d1</text>
+                        <line x1={p2.x} y1={p2.y} x2={p2.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                        <text x={p2.x} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Brakes Applied ({reactionTime}s)</text>
+
+                        {/* Braking Phase Label */}
+                        <text x={(p2.x + p3.x) / 2} y={p1.y + (yBase - p1.y)/2} textAnchor="middle" className="text-[10px] fill-blue-600 font-bold bg-white">Braking Phase</text>
+                        <text x={(p2.x + p3.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-blue-600 opacity-60">Area = d2</text>
+                        
+                        {/* Stop Marker */}
+                        <text x={Math.min(p3.x, graphWidth - 20)} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Stopped ({totalTime.toFixed(1)}s)</text>
+
+                        {/* Velocity Value */}
+                        <text x={p1.x - 5} y={p1.y} textAnchor="end" alignmentBaseline="middle" className="text-[10px] fill-slate-600 font-mono">{velocityMs.toFixed(1)} m/s</text>
+
+                        </svg>
+                    </div>
+                    </div>
+
                 </div>
-                <span className="font-mono text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">{velocityKmh} km/h</span>
-              </div>
-              <input 
-                type="range" min="10" max="150" step="1" 
-                value={velocityKmh} 
-                onChange={(e) => setVelocityKmh(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-            </div>
 
-            {/* Reaction Time Control */}
-            <div className="space-y-2 mb-5">
-              <div className="flex justify-between items-end">
-                <div>
-                  <label className="text-sm font-bold text-slate-700 block">Reaction Time (t_react)</label>
-                  <span className="text-[10px] text-slate-500 block">Thinking Dist: d1 = u × t</span>
+                {/* Footer */}
+                <div className="absolute bottom-2 right-4 text-xs text-slate-400">
+                    Created by Buddhike Priyadarshana
                 </div>
-                <span className="font-mono text-sm text-amber-600 bg-amber-50 px-2 py-1 rounded">{reactionTime} s</span>
-              </div>
-              <input 
-                type="range" min="0.1" max="3.0" step="0.1" 
-                value={reactionTime} 
-                onChange={(e) => setReactionTime(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
-              />
-            </div>
-
-            {/* Deceleration Control */}
-            <div className="space-y-2 mb-5">
-              <div className="flex justify-between items-end">
-                <div>
-                  <label className="text-sm font-bold text-slate-700 block">Deceleration (a)</label>
-                  <span className="text-[10px] text-slate-500 block">Braking Dist: d2 = u² / 2a</span>
                 </div>
-                <span className="font-mono text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded">{deceleration} m/s²</span>
-              </div>
-              <input 
-                type="range" min="1" max="15" step="0.5" 
-                value={deceleration} 
-                onChange={(e) => setDeceleration(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600"
-              />
-              <div className="text-[10px] text-slate-400 flex justify-between mt-1">
-                <span>Wet (μ≈0.4)</span><span>Dry (μ≈0.7)</span><span>Sport (μ&gt;1.0)</span>
-              </div>
-            </div>
+            );
+        };
 
-            {/* Distance Control */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-end">
-                <div>
-                  <label className="text-sm font-bold text-slate-700 block">Target Separation (s)</label>
-                  <span className="text-[10px] text-slate-500 block">Condition: d_total &lt; s</span>
-                </div>
-                <span className="font-mono text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded">{distanceToBoy} m</span>
-              </div>
-              <input 
-                type="range" min="10" max="200" step="1" 
-                value={distanceToBoy} 
-                onChange={(e) => setDistanceToBoy(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-              />
-            </div>
-          </div>
-
-          {/* Right Column: Visual & Stats (Stacked) */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
-             
-             {/* Visual Representation (Road) */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-center h-1/2 min-h-[140px] relative">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Simulation Visual</h3>
-              
-              <div className="relative w-full h-24 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden mb-2">
-                  
-                  {/* Distance Markers (Scale) */}
-                  <div className="absolute bottom-0 w-full border-t border-slate-300 h-4">
-                    {[0, 50, 100, 150, 200].map((dist) => (
-                      <div key={dist} className="absolute top-0 h-2 border-l border-slate-400" style={{ left: `calc(${startOffset} + ${(dist / 200) * 100}%)` }}>
-                        <span className="absolute top-3 left-0 -translate-x-1/2 text-[9px] text-slate-500 font-mono">{dist}m</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Reaction Zone (Static Background) */}
-                  <div 
-                    className="absolute top-8 h-6 bg-amber-300 opacity-40 border-l border-slate-400"
-                    style={{ 
-                      left: startOffset,
-                      width: `${(reactionDistance / 200) * 100}%` 
-                    }}
-                  ></div>
-
-                  {/* Braking Zone (Static Background) */}
-                  <div 
-                    className="absolute top-8 h-6 bg-blue-400 opacity-40"
-                    style={{ 
-                      left: `calc(${startOffset} + ${(reactionDistance / 200) * 100}%)`,
-                      width: `${(brakingDistance / 200) * 100}%` 
-                    }}
-                  ></div>
-
-                  {/* The Boy (Static Target) */}
-                  <div 
-                    className="absolute top-4 flex flex-col items-center"
-                    style={{ left: `calc(${startOffset} + ${(distanceToBoy / 200) * 100}%)`, zIndex: 20 }}
-                  >
-                    <User className={`w-8 h-8 ${isSafe ? 'text-slate-600' : 'text-red-600 animate-pulse'}`} />
-                    <div className="h-12 w-px border-l border-dashed border-slate-400"></div>
-                  </div>
-
-                  {/* The Car - Animated with Front Alignment */}
-                  <Car 
-                    className="absolute top-6 w-8 h-8 text-slate-800 z-30 transform -translate-x-full"
-                    style={{ left: `calc(${startOffset} + ${(carPosition / 200) * 100}%)` }}
-                  />
-                  
-                  {/* Start Line Marker */}
-                  <div className="absolute top-6 bottom-0 w-px border-l border-dashed border-slate-300" style={{ left: startOffset }}></div>
-
-              </div>
-
-              <div className="flex gap-6 text-[11px] text-slate-500 justify-center">
-                  <div className="flex items-center gap-1"><div className="w-3 h-3 bg-amber-300 rounded-sm opacity-60"></div>Reaction Zone</div>
-                  <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-400 rounded-sm opacity-60"></div>Braking Zone</div>
-                  <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-800 rounded-sm"></div>Car (Front aligned)</div>
-              </div>
-            </div>
-
-            {/* Physics Data (Stats) */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-1/2 min-h-[140px] flex items-center">
-              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="block text-slate-500 text-xs mb-1">Reaction Dist. (d1)</span>
-                    <span className="font-mono text-amber-600 font-bold text-lg">{reactionDistance.toFixed(1)}m</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="block text-slate-500 text-xs mb-1">Braking Dist. (d2)</span>
-                    <span className="font-mono text-blue-600 font-bold text-lg">{brakingDistance.toFixed(1)}m</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="block text-slate-500 text-xs mb-1">Total Time (t)</span>
-                    <span className="font-mono text-slate-700 font-bold text-lg">{totalTime.toFixed(2)}s</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <span className="block text-slate-500 text-xs mb-1">Req. Decel (a_req)</span>
-                    <span className="font-mono text-slate-900 font-bold text-lg">
-                      {impossibleToSave ? "N/A" : `${requiredDeceleration.toFixed(1)} m/s²`}
-                    </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* 3. Bottom Section: Graph (Full Width) */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
-          <h2 className="text-md font-bold text-slate-700 mb-2 pl-2 border-l-4 border-blue-500">Velocity vs. Time Graph (v vs t)</h2>
-          
-          <div className="w-full flex justify-center overflow-hidden">
-            <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full border-l border-b border-slate-300 bg-slate-50 max-h-[300px]" preserveAspectRatio="none">
-              
-              {/* Areas under Curve */}
-              <polygon points={reactionAreaPoints} fill="#fcd34d" fillOpacity="0.2" />
-              <polygon points={brakingAreaPoints} fill="#60a5fa" fillOpacity="0.2" />
-
-              {/* Grid Lines Y */}
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
-                <line 
-                  key={ratio}
-                  x1={padding} 
-                  y1={padding + ratio * (graphHeight - 2 * padding)} 
-                  x2={graphWidth} 
-                  y2={padding + ratio * (graphHeight - 2 * padding)} 
-                  stroke="#e2e8f0" 
-                  strokeDasharray="4"
-                />
-              ))}
-
-                {/* Grid Lines X */}
-                {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
-                <line 
-                  key={ratio}
-                  x1={padding + ratio * (graphWidth - 2 * padding)} 
-                  y1={padding} 
-                  x2={padding + ratio * (graphWidth - 2 * padding)} 
-                  y2={graphHeight - padding} 
-                  stroke="#e2e8f0" 
-                  strokeDasharray="4"
-                />
-              ))}
-
-              {/* Axes Labels */}
-              <text x={graphWidth / 2} y={graphHeight - 10} textAnchor="middle" className="text-xs fill-slate-500 font-bold">Time (s)</text>
-              <text x={15} y={graphHeight / 2} textAnchor="middle" transform={`rotate(-90, 15, ${graphHeight/2})`} className="text-xs fill-slate-500 font-bold">Velocity (m/s)</text>
-
-              {/* The Plot Line */}
-              <polyline 
-                points={polylinePoints} 
-                fill="none" 
-                stroke={isSafe ? "#10b981" : "#ef4444"} 
-                strokeWidth="4" 
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* Impact Point Marker (if collision) */}
-              {!isSafe && !impossibleToSave && (
-                  <circle cx={timeToX(reactionTime + (distanceToBoy - reactionDistance) / velocityMs * 2)} cy={velToY(collisionSpeed)} r="6" fill="#ef4444" />
-              )}
-
-              {/* Detailed Annotations */}
-              
-              {/* t=0 Marker */}
-              <line x1={p1.x} y1={p1.y} x2={p1.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
-              <text x={p1.x} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-800 font-bold">t=0: Sees Boy</text>
-
-              {/* Reaction Phase Label */}
-              <text x={(p1.x + p2.x) / 2} y={p1.y - 10} textAnchor="middle" className="text-[10px] fill-amber-600 font-bold">Reaction Phase</text>
-              <text x={(p1.x + p2.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-amber-600 opacity-60">Area = d1</text>
-              <line x1={p2.x} y1={p2.y} x2={p2.x} y2={graphHeight - padding + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
-              <text x={p2.x} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Brakes Applied ({reactionTime}s)</text>
-
-              {/* Braking Phase Label */}
-              <text x={(p2.x + p3.x) / 2} y={p1.y + (yBase - p1.y)/2} textAnchor="middle" className="text-[10px] fill-blue-600 font-bold bg-white">Braking Phase</text>
-              <text x={(p2.x + p3.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-blue-600 opacity-60">Area = d2</text>
-              
-              {/* Stop Marker */}
-              <text x={Math.min(p3.x, graphWidth - 20)} y={graphHeight - padding + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Stopped ({totalTime.toFixed(1)}s)</text>
-
-              {/* Velocity Value */}
-              <text x={p1.x - 5} y={p1.y} textAnchor="end" alignmentBaseline="middle" className="text-[10px] fill-slate-600 font-mono">{velocityMs.toFixed(1)} m/s</text>
-
-            </svg>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Footer */}
-      <div className="absolute bottom-2 right-4 text-xs text-slate-400">
-        Created by Buddhike Priyadarshana
-      </div>
-    </div>
-  );
-};
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BrakingSimulator />);
+    </script>
+</body>
+</html>
