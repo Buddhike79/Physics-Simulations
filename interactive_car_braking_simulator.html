@@ -5,7 +5,666 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Braking Physics Simulator</title>
     
+    <!-- 1.<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save the Boy!</title>
+    
     <!-- 1. Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Load React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Load Babel to handle JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Inline Icons ---
+        const AlertTriangle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        );
+        const CheckCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+        );
+        const RefreshCcw = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+        );
+        const CarIcon = ({ className, style }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M2 12h12"/></svg>
+        );
+        const User = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        );
+        const Zap = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        );
+        const Wine = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
+        );
+        const Cpu = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+        );
+
+        // --- Constants ---
+        const SAFETY_BUFFER = 2.0; // meters
+        const IMPAIRED_MIN_REACTION_TIME = 2.5; // seconds
+
+        // --- Main Component ---
+        const BrakingSimulator = () => {
+            // --- State ---
+            const [velocityKmh, setVelocityKmh] = useState(60); 
+            const [reactionTime, setReactionTime] = useState(1.0); 
+            const [distanceToBoy, setDistanceToBoy] = useState(50); 
+            const [deceleration, setDeceleration] = useState(6); 
+            
+            // --- Modes ---
+            const [driverMode, setDriverMode] = useState('HUMAN');
+            const [isModernTech, setIsModernTech] = useState(false);
+            const [isImpaired, setIsImpaired] = useState(false);
+
+            const [animTime, setAnimTime] = useState(0);
+            const startTimeRef = useRef(null);
+            const animationFrameRef = useRef(null);
+
+            // --- Handlers ---
+            const toggleModernTech = () => setIsModernTech(!isModernTech);
+            const toggleImpaired = () => {
+                setIsImpaired(!isImpaired);
+                // Ensure reaction time meets the minimum of 2.5s if impairment is switched ON
+                if (!isImpaired) {
+                    setReactionTime(prev => Math.max(prev, IMPAIRED_MIN_REACTION_TIME));
+                }
+            }
+            const toggleDriverMode = (mode) => {
+                setDriverMode(mode);
+                setAnimTime(0);
+                startTimeRef.current = null;
+            }
+
+            const handleReactionTimeChange = (e) => {
+                let newValue = Number(e.target.value);
+                const minTime = isImpaired ? IMPAIRED_MIN_REACTION_TIME : 0.1;
+                // Clamp the value to the appropriate minimum
+                if (newValue < minTime) {
+                    newValue = minTime;
+                }
+                setReactionTime(newValue);
+            };
+
+
+            // --- Physics Logic ---
+
+            const velocityMs = velocityKmh / 3.6;
+            
+            let effectiveReactionTime = reactionTime;
+            let effectiveDeceleration = deceleration;
+            let systemStatus = "OFF"; 
+            let interventionReason = "";
+            let reactionLabel = "Normal";
+            let decelLabel = "Standard";
+            let reactionZoneColor = 'bg-amber-300'; 
+            let reactionZoneGraphColor = '#fcd34d'; 
+
+            // --- BRANCH 1: AUTONOMOUS AI DRIVER ---
+            if (driverMode === 'AI') {
+                const AI_DECEL = 10;           
+                const AI_LATENCY = 0.05;       
+
+                // 1. Calculate the minimum distance required by the AI to stop
+                const AI_BrakingDist = (velocityMs * velocityMs) / (2 * AI_DECEL);
+                const AI_LatencyDist = velocityMs * AI_LATENCY;
+                const AI_RequiredStoppingDist = AI_BrakingDist + AI_LatencyDist + SAFETY_BUFFER;
+
+                effectiveDeceleration = AI_DECEL;
+                decelLabel = "Optimized (AI)";
+                systemStatus = "AUTONOMOUS";
+                
+                reactionZoneColor = 'bg-cyan-300'; 
+                reactionZoneGraphColor = '#67e8f9'; 
+
+                if (distanceToBoy <= AI_RequiredStoppingDist) {
+                    effectiveReactionTime = AI_LATENCY;
+                    reactionLabel = "Emergency (AI)";
+                } else {
+                    const distanceToCoast = distanceToBoy - AI_RequiredStoppingDist;
+                    const timeToCoast = distanceToCoast / velocityMs;
+                    
+                    effectiveReactionTime = timeToCoast + AI_LATENCY;
+                    reactionLabel = "Optimal Coast (AI)";
+                }
+            } 
+            // --- BRANCH 2: HUMAN DRIVER ---
+            else {
+                // 1. Determine baseline human parameters based on sliders/impairment
+                let humanReactionTime = reactionTime;
+                
+                // Enforce IMPAIRED_MIN_REACTION_TIME but honor higher user setting
+                if (isImpaired) {
+                    humanReactionTime = Math.max(IMPAIRED_MIN_REACTION_TIME, reactionTime);
+                }
+
+
+                let humanDeceleration = deceleration;
+                if (isImpaired) humanDeceleration = Math.max(0.1, deceleration * 0.8);
+                
+                // Set default/impaired human parameters (Priority 1: User's Input/Intent)
+                effectiveReactionTime = humanReactionTime;
+                effectiveDeceleration = humanDeceleration;
+
+                // Set default labels
+                if (isImpaired) {
+                    // Removed dollar signs ($) here
+                    reactionLabel = `Slow (Min ${IMPAIRED_MIN_REACTION_TIME.toFixed(2)}s)`; 
+                    decelLabel = `Weak (20% reduction)`;
+                } else {
+                    reactionLabel = "Normal";
+                    decelLabel = "Standard";
+                }
+                
+                // Calculate if crash is imminent with current human parameters
+                const humanReactionDist = velocityMs * humanReactionTime;
+                const humanBrakingDist = (velocityMs * velocityMs) / (2 * Math.max(0.1, humanDeceleration));
+                const humanTotalDist = humanReactionDist + humanBrakingDist;
+                const isHumanInEmergency = humanTotalDist >= distanceToBoy;
+
+
+                // --- 2. MODERN TECH LOGIC (Override if crash imminent) ---
+                if (isModernTech && isHumanInEmergency) {
+                    const TECH_REACTION_DELAY = 0.1; 
+                    const TECH_DECEL = Math.min(15, deceleration * 1.3);
+                    const techBrakingDist = (velocityMs * velocityMs) / (2 * Math.max(0.1, TECH_DECEL));
+                    
+                    const distanceAvailableToCoast = distanceToBoy - techBrakingDist - SAFETY_BUFFER;
+                    const timeUntilCriticalBraking = Math.max(TECH_REACTION_DELAY, distanceAvailableToCoast / velocityMs);
+
+                    systemStatus = "ENGAGED";
+                    reactionZoneColor = 'bg-indigo-300';
+                    reactionZoneGraphColor = '#a5b4fc'; 
+                        
+                    if (humanReactionTime <= timeUntilCriticalBraking) {
+                        effectiveReactionTime = humanReactionTime;
+                        effectiveDeceleration = TECH_DECEL;
+                        interventionReason = "EBA: Boosted";
+                    } else {
+                        effectiveReactionTime = timeUntilCriticalBraking;
+                        effectiveDeceleration = TECH_DECEL;
+                        interventionReason = "AEB: Late Stop";
+                    }
+                    if (distanceAvailableToCoast < 0) {
+                        effectiveReactionTime = TECH_REACTION_DELAY;
+                        interventionReason = "AEB: Emergency";
+                    }
+                    decelLabel = "Boosted (ABS)";
+                    reactionLabel = interventionReason.includes("AEB") ? "Auto (AEB)" : "Human (EBA)";
+                } 
+                // --- If Tech is STANDBY or OFF (Use Human Baseline) ---
+                else {
+                    // Logic already set in initial parameters.
+                    systemStatus = isModernTech ? "STANDBY" : "OFF";
+                    // Colors are already Amber default.
+                }
+            }
+
+            // --- Final Simulation Calculations ---
+            const reactionDistance = velocityMs * effectiveReactionTime;
+            const safeDeceleration = Math.max(0.1, effectiveDeceleration);
+            const brakingDistance = (velocityMs * velocityMs) / (2 * safeDeceleration);
+            const brakingTime = velocityMs / safeDeceleration;
+
+            const totalStoppingDistance = reactionDistance + brakingDistance;
+            const totalTime = effectiveReactionTime + brakingTime;
+
+            const isSafe = totalStoppingDistance < distanceToBoy;
+            const collisionSpeed = isSafe 
+                ? 0 
+                : Math.sqrt(Math.max(0, (velocityMs * velocityMs) - 2 * safeDeceleration * (distanceToBoy - reactionDistance)));
+
+            const distAvailableForBraking = distanceToBoy - reactionDistance;
+            let impossibleToSave = false;
+            let requiredDeceleration = 0;
+
+            if (distAvailableForBraking <= 0) {
+                impossibleToSave = true; 
+            } else {
+                requiredDeceleration = (velocityMs * velocityMs) / (2 * distAvailableForBraking);
+            }
+
+            // --- Animation Loop ---
+            useEffect(() => {
+                const animate = (timestamp) => {
+                if (!startTimeRef.current) startTimeRef.current = timestamp;
+                const elapsed = (timestamp - startTimeRef.current) / 1000; 
+
+                setAnimTime(elapsed);
+
+                if (elapsed < totalTime + 2) {
+                    animationFrameRef.current = requestAnimationFrame(animate);
+                } else {
+                    startTimeRef.current = null; 
+                    animationFrameRef.current = requestAnimationFrame(animate);
+                }
+                };
+                animationFrameRef.current = requestAnimationFrame(animate);
+                return () => {
+                if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+                startTimeRef.current = null;
+                setAnimTime(0);
+                };
+            }, [velocityMs, effectiveReactionTime, safeDeceleration, totalTime, distanceToBoy, driverMode]);
+
+            // --- Car Position ---
+            let carPosition = 0;
+            const timeToUse = Math.min(animTime, totalTime); 
+
+            if (timeToUse <= effectiveReactionTime) {
+                carPosition = velocityMs * timeToUse;
+            } else {
+                const brakingElapsed = timeToUse - effectiveReactionTime;
+                carPosition = reactionDistance + (velocityMs * brakingElapsed - 0.5 * safeDeceleration * brakingElapsed * brakingElapsed);
+            }
+            carPosition = Math.min(carPosition, totalStoppingDistance);
+
+
+            // --- Graph Plotting ---
+            const graphWidth = 1000;
+            const graphHeight = 210;
+            const paddingTop = 20;
+            const paddingBottom = 30;
+            const paddingX = 50;
+            
+            const maxTimeGraph = Math.max(totalTime * 1.2, 5);
+            const maxVelGraph = Math.max(velocityMs * 1.2, 20);
+
+            const timeToX = (t) => paddingX + (t / maxTimeGraph) * (graphWidth - 2 * paddingX);
+            const velToY = (v) => (graphHeight - paddingBottom) - (v / maxVelGraph) * (graphHeight - paddingBottom - paddingTop);
+
+            const p1 = { x: timeToX(0), y: velToY(velocityMs) };
+            const p2 = { x: timeToX(effectiveReactionTime), y: velToY(velocityMs) };
+            const p3 = { x: timeToX(totalTime), y: velToY(0) };
+            const yBase = velToY(0);
+
+            const reactionAreaPoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p2.x},${yBase} ${p1.x},${yBase}`;
+            const brakingAreaPoints = `${p2.x},${p2.y} ${p3.x},${p3.y} ${p3.x},${yBase} ${p2.x},${yBase}`;
+            const polylinePoints = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
+            const startOffset = "3rem"; 
+
+            return (
+                <div className="flex flex-col items-center justify-start min-h-screen bg-slate-50 p-4 text-slate-800 relative" style={{ fontFamily: '"Comic Sans MS", "Comic Sans", cursive' }}>
+                
+                {/* Main Container */}
+                <div className="w-full max-w-6xl space-y-4">
+
+                    {/* Header */}
+                    <div className={`w-full rounded-xl shadow-sm p-4 transition-colors duration-500 ${isSafe ? 'bg-emerald-100 border border-emerald-400' : 'bg-red-100 border border-red-400'}`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                        {isSafe ? <CheckCircle className="w-8 h-8 text-emerald-600" /> : <AlertTriangle className="w-8 h-8 text-red-600" />}
+                        <div>
+                            <h1 className={`text-2xl font-bold ${isSafe ? 'text-emerald-800' : 'text-red-800'}`}>
+                            {isSafe ? "SAFE STOP" : "COLLISION DETECTED"}
+                            </h1>
+                            <div className="flex flex-col md:flex-row md:gap-4 text-sm text-slate-700">
+                                <span>{isSafe 
+                                    ? `Stopped ${ (distanceToBoy - totalStoppingDistance).toFixed(1) }m before boy.` 
+                                    : impossibleToSave 
+                                    ? "Hit during reaction time!"
+                                    : `Impact Speed: ${(collisionSpeed * 3.6).toFixed(1)} km/h`
+                                }</span>
+                                {/* LOGIC: Only show save message if safe AND tech intervened */}
+                                {isSafe && systemStatus === "ENGAGED" && (
+                                    <span className="font-bold text-indigo-700 flex items-center gap-1 animate-pulse">
+                                        <Zap className="w-3 h-3"/> Tech saved the boy!
+                                    </span>
+                                )}
+                                {driverMode === 'AI' && (
+                                     <span className="font-bold text-cyan-600 flex items-center gap-1">
+                                        <Cpu className="w-3 h-3"/> Autonomous Driving Active
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        </div>
+                        <div className="text-right hidden sm:block">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Stopping Dist.</div>
+                        <div className="text-3xl font-mono font-bold text-slate-800">{totalStoppingDistance.toFixed(1)}m</div>
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* Controls & Analysis - MAIN GRID START */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    
+                    {/* LEFT COLUMN (4/12) - CONTROLS */}
+                    <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+                        
+                        {/* Driver Mode Selector */}
+                        <div className="flex gap-2 mb-6 border-b border-slate-100 pb-4">
+                            <button 
+                                onClick={() => toggleDriverMode('HUMAN')}
+                                className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${driverMode === 'HUMAN' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
+                            >
+                                <User className="w-6 h-6 mb-1"/>
+                                <span className="text-xs font-bold">Human Driver</span>
+                            </button>
+                            <button 
+                                onClick={() => toggleDriverMode('AI')}
+                                className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${driverMode === 'AI' ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-slate-100 text-slate-400 hover:bg-slate-50'}`}
+                            >
+                                <Cpu className="w-6 h-6 mb-1"/>
+                                <span className="text-xs font-bold">Autonomous AI</span>
+                            </button>
+                        </div>
+
+                        {/* Controls (Disabled if AI) */}
+                        <div className={`transition-all duration-300 ${driverMode === 'AI' ? 'opacity-40 pointer-events-none grayscale' : 'opacity-100'}`}>
+                            
+                            {/* Modern Tech Toggle */}
+                            <div className={`border rounded-lg p-3 mb-2 transition-colors ${isModernTech ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200'}`}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className={`flex items-center gap-2 text-sm font-bold cursor-pointer ${isModernTech ? 'text-indigo-900' : 'text-slate-600'}`}>
+                                        <Zap className={`w-4 h-4 ${isModernTech ? 'text-indigo-600 fill-indigo-600' : 'text-slate-400'}`} />
+                                        Modern Safety Tech
+                                    </label>
+                                    <button onClick={toggleModernTech} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isModernTech ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isModernTech ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className={`text-[10px] leading-tight ${isModernTech ? 'text-indigo-700' : 'text-slate-400'}`}>
+                                        {isModernTech ? "System Active" : "Disabled"}
+                                    </span>
+                                    {isModernTech && (
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${systemStatus === "ENGAGED" ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {systemStatus === "ENGAGED" ? (interventionReason || "INTERVENING") : "STANDBY"}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Impaired Driver Toggle */}
+                            <div className={`border rounded-lg p-3 mb-5 transition-colors ${isImpaired ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className={`flex items-center gap-2 text-sm font-bold cursor-pointer ${isImpaired ? 'text-red-900' : 'text-slate-600'}`}>
+                                        <Wine className={`w-4 h-4 ${isImpaired ? 'text-red-600 fill-red-100' : 'text-slate-400'}`} />
+                                        Impaired Driver
+                                    </label>
+                                    <button onClick={toggleImpaired} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isImpaired ? 'bg-red-600' : 'bg-slate-300'}`}>
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isImpaired ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                                <div className={`text-[10px] leading-tight ${isImpaired ? 'text-red-700' : 'text-slate-400'}`}>
+                                    {/* Removed dollar signs */}
+                                    {isImpaired ? `Driver is impaired (Min ${IMPAIRED_MIN_REACTION_TIME.toFixed(2)}s reaction)` : "Driver is sober"}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Global Physics Controls */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Physics Variables</h3>
+                            
+                            {/* Velocity */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-end">
+                                    <label className="text-sm font-bold text-slate-700">Initial Velocity (u)</label>
+                                    <span className="font-mono text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">{velocityKmh} km/h</span>
+                                </div>
+                                <input type="range" min="10" max="150" step="1" value={velocityKmh} onChange={(e) => setVelocityKmh(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                            </div>
+
+                            {/* Reaction Time (Human Only) */}
+                            <div className={`space-y-2 transition-opacity ${driverMode === 'AI' ? 'opacity-40 pointer-events-none' : ''} ${systemStatus === "ENGAGED" ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                                <div className="flex justify-between items-end">
+                                    <label className="text-sm font-bold text-slate-700">
+                                        {driverMode === 'AI' ? "Decision Time (t_opt)" : "Reaction Time (t_react)"}
+                                    </label>
+                                    <div className="text-right flex flex-col items-end">
+                                        <span className={`font-mono text-sm px-2 py-1 rounded ${driverMode === 'AI' ? 'text-cyan-600 bg-cyan-50 font-bold' : systemStatus === "ENGAGED" ? 'text-indigo-600 bg-indigo-50 font-bold' : isImpaired ? 'text-red-600 bg-red-50 font-bold' : 'text-amber-600 bg-amber-50'}`}>
+                                            {effectiveReactionTime.toFixed(2)} s
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400">{reactionLabel}</span>
+                                    </div>
+                                </div>
+                                {/* Correctly sets min based on impairment status */}
+                                <input 
+                                    type="range" 
+                                    min={isImpaired ? IMPAIRED_MIN_REACTION_TIME : 0.1} 
+                                    max="10.0" 
+                                    step="0.1" 
+                                    value={reactionTime} 
+                                    onChange={handleReactionTimeChange} 
+                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500" 
+                                    disabled={systemStatus === "ENGAGED"} 
+                                />
+                            </div>
+
+                            {/* Deceleration (Locked in AI) */}
+                            <div className={`space-y-2 ${driverMode === 'AI' ? 'opacity-70 pointer-events-none' : ''}`}>
+                                <div className="flex justify-between items-end">
+                                    <label className="text-sm font-bold text-slate-700">Deceleration (a)</label>
+                                    <div className="text-right flex flex-col items-end">
+                                        <span className={`font-mono text-sm px-2 py-1 rounded ${driverMode === 'AI' ? 'text-cyan-600 bg-cyan-50 font-bold' : systemStatus === "ENGAGED" ? 'text-indigo-700 bg-indigo-100 font-bold' : (isImpaired && systemStatus !== "ENGAGED") ? 'text-red-700 bg-red-100 font-bold' : systemStatus === "NON-EMERGENCY" ? 'text-emerald-700 bg-emerald-100 font-bold' : 'text-slate-700 bg-slate-100'}`}>
+                                            {effectiveDeceleration.toFixed(1)} m/s²
+                                        </span>
+                                        <span className="text-[9px] font-bold text-slate-400">{decelLabel}</span>
+                                    </div>
+                                </div>
+                                <input type="range" min="1" max="15" step="0.5" value={deceleration} onChange={(e) => setDeceleration(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+                                
+                                {/* RESTORED DECEL LABELS */}
+                                <div className="text-[10px] text-slate-400 flex justify-between mt-1">
+                                    <span>Wet (μ≈0.4)</span><span>Dry (μ≈0.7)</span><span>Sport (μ&gt;1.0)</span>
+                                </div>
+                            </div>
+
+                            {/* Distance */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-end">
+                                    <label className="text-sm font-bold text-slate-700">Target Separation (s)</label>
+                                    <span className="font-mono text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded">{distanceToBoy} m</span>
+                                </div>
+                                <input type="range" min="10" max="200" step="1" value={distanceToBoy} onChange={(e) => setDistanceToBoy(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN (8/12) - VISUAL, STATS, & GRAPH (Stacked) */}
+                    <div className="lg:col-span-8 flex flex-col gap-4">
+                        
+                        {/* Visual */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-center min-h-[140px] relative overflow-hidden">
+                        
+                        {/* Impaired Effect (Only Human) */}
+                        {driverMode === 'HUMAN' && isImpaired && (
+                            <div className="absolute inset-0 z-10 pointer-events-none">
+                                <div className="absolute inset-0" style={{ background: 'radial-gradient(circle, transparent 50%, rgba(0,0,0,0.3) 100%)' }}></div>
+                            </div>
+                        )}
+
+                        {/* AI Scan Effect */}
+                        {driverMode === 'AI' && (
+                             <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden opacity-10">
+                                <div className="absolute w-full h-full bg-[linear-gradient(transparent_0%,_#06b6d4_50%,_transparent_100%)] animate-[scan_2s_ease-in-out_infinite]" style={{backgroundSize: '100% 50px'}}></div>
+                             </div>
+                        )}
+                        <style>{`@keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }`}</style>
+
+                        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 relative z-20">Simulation Visual</h3>
+                        
+                        <div 
+                            className="relative w-full h-24 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden mb-2 transition-all duration-700"
+                            style={{ filter: (driverMode === 'HUMAN' && isImpaired) ? 'blur(1.5px)' : 'none' }}
+                        >
+                            
+                            {/* Scale */}
+                            <div className="absolute bottom-0 w-full border-t border-slate-300 h-4">
+                                {[0, 50, 100, 150, 200].map((dist) => (
+                                <div key={dist} className="absolute top-0 h-2 border-l border-slate-400" style={{ left: `calc(${startOffset} + ${(dist / 200) * 100}%)` }}>
+                                    <span className="absolute top-3 left-0 -translate-x-1/2 text-[9px] text-slate-500 font-mono">{dist}m</span>
+                                </div>
+                                ))}
+                            </div>
+
+                            {/* Zones */}
+                            {/* Reaction/Optimization Zone (Dynamic Color) */}
+                            <div 
+                                className={`absolute top-8 h-6 ${reactionZoneColor} opacity-40 border-l border-slate-400`} 
+                                style={{ left: startOffset, width: `${(reactionDistance / 200) * 100}%` }}
+                            ></div>
+                            {/* Braking Zone */}
+                            <div className="absolute top-8 h-6 bg-blue-400 opacity-40" style={{ left: `calc(${startOffset} + ${(reactionDistance / 200) * 100}%)`, width: `${(brakingDistance / 200) * 100}%` }}></div>
+
+                            {/* Boy */}
+                            <div className="absolute top-4 flex flex-col items-center" style={{ left: `calc(${startOffset} + ${(distanceToBoy / 200) * 100}%)`, zIndex: 20 }}>
+                                <User className={`w-8 h-8 ${isSafe ? 'text-slate-600' : 'text-red-600 animate-pulse'}`} />
+                                <div className="h-12 w-px border-l border-dashed border-slate-400"></div>
+                            </div>
+
+                            {/* Car */}
+                            <div className="absolute top-6 z-30 transform -translate-x-full" style={{ left: `calc(${startOffset} + ${(carPosition / 200) * 100}%)` }}>
+                                <CarIcon className={`w-8 h-8 ${driverMode === 'AI' ? 'text-cyan-700' : 'text-slate-800'}`} />
+                                {/* AI Lidar Cone */}
+                                {driverMode === 'AI' && (
+                                    <div className="absolute top-1/2 left-full -translate-y-1/2 w-12 h-16 bg-cyan-400 opacity-20 -z-10" style={{ clipPath: 'polygon(0 40%, 100% 0, 100% 100%, 0 60%)' }}></div>
+                                )}
+                            </div>
+                            
+                            {/* Start Line */}
+                            <div className="absolute top-6 bottom-0 w-px border-l border-dashed border-slate-300" style={{ left: startOffset }}></div>
+
+                        </div>
+
+                        <div className="flex gap-6 text-[11px] text-slate-500 justify-center relative z-20">
+                            <div className="flex items-center gap-1">
+                                <div className={`w-3 h-3 rounded-sm opacity-60 ${reactionZoneColor}`}></div>
+                                {
+                                    driverMode === 'AI' 
+                                    ? "Latency/Coast Phase" 
+                                    : systemStatus === 'ENGAGED'
+                                        ? "Tech Intervention Phase"
+                                        : "Human Reaction Zone"
+                                }
+                            </div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-400 rounded-sm opacity-60"></div>Braking Zone</div>
+                            <div className="flex items-center gap-1"><div className={`w-3 h-3 rounded-sm ${driverMode === 'AI' ? 'bg-cyan-700' : 'bg-slate-800'}`}></div>Car</div>
+                        </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 min-h-[140px] flex items-center">
+                        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Reaction Dist. (d1)</span>
+                                <span className="font-mono text-amber-600 font-bold text-lg">{reactionDistance.toFixed(1)}m</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Braking Dist. (d2)</span>
+                                <span className="font-mono text-blue-600 font-bold text-lg">{brakingDistance.toFixed(1)}m</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Total Time (t)</span>
+                                <span className="font-mono text-slate-700 font-bold text-lg">{totalTime.toFixed(2)}s</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="block text-slate-500 text-xs mb-1">Req. Decel (a_req)</span>
+                                <span className="font-mono text-slate-900 font-bold text-lg">
+                                {impossibleToSave ? "N/A" : `${requiredDeceleration.toFixed(1)} m/s²`}
+                                </span>
+                            </div>
+                        </div>
+                        </div>
+
+                        {/* Graph (MOVED HERE) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
+                        <h2 className="text-md font-bold text-slate-700 mb-2 pl-2 border-l-4 border-blue-500">Velocity vs. Time Graph (v vs t)</h2>
+                        
+                        <div className="w-full flex justify-center overflow-hidden">
+                            <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full border-l border-b border-slate-300 bg-slate-50 max-h-[300px]" preserveAspectRatio="none">
+                            
+                            <polygon points={reactionAreaPoints} fill={reactionZoneGraphColor} fillOpacity="0.2" />
+                            <polygon points={brakingAreaPoints} fill="#60a5fa" fillOpacity="0.2" />
+
+                            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                                <line key={ratio} x1={paddingX} y1={paddingTop + ratio * (graphHeight - paddingBottom - paddingTop)} x2={graphWidth - paddingX} y2={paddingTop + ratio * (graphHeight - paddingBottom - paddingTop)} stroke="#e2e8f0" strokeDasharray="4" />
+                            ))}
+
+                            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                                <line key={ratio} x1={paddingX + ratio * (graphWidth - 2 * paddingX)} y1={paddingTop} x2={paddingX + ratio * (graphWidth - 2 * paddingX)} y2={graphHeight - paddingBottom} stroke="#e2e8f0" strokeDasharray="4" />
+                            ))}
+
+                            <line x1={paddingX} y1={paddingTop} x2={paddingX} y2={graphHeight - paddingBottom} stroke="#475569" strokeWidth="2" />
+                            <line x1={paddingX} y1={graphHeight - paddingBottom} x2={graphWidth - paddingX} y2={graphHeight - paddingBottom} stroke="#475569" strokeWidth="2" />
+                            
+                            {/* Vertical Axis Arrow Head */}
+                            <polygon points={`${paddingX},${paddingTop} ${paddingX - 5},${paddingTop + 10} ${paddingX + 5},${paddingTop + 10}`} fill="#475569" />
+                            
+                            {/* Horizontal Axis Arrow Head */}
+                            <polygon points={`${graphWidth - paddingX},${graphHeight - paddingBottom} ${graphWidth - paddingX - 10},${graphHeight - paddingBottom - 5} ${graphWidth - paddingX - 10},${graphHeight - paddingBottom + 5}`} fill="#475569" />
+
+                            <text x={graphWidth / 2} y={graphHeight - 5} textAnchor="middle" className="text-xs fill-slate-500 font-bold">Time (s)</text>
+                            
+                            {/* Horizontal Velocity Label at the top of the axis */}
+                            <text x={paddingX + 5} y={paddingTop - 5} textAnchor="start" className="text-xs fill-slate-500 font-bold">Velocity (m/s)</text>
+
+                            <polyline points={polylinePoints} fill="none" stroke={isSafe ? "#10b981" : "#ef4444"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+
+                            {!isSafe && !impossibleToSave && (
+                                <circle cx={timeToX(effectiveReactionTime + (distanceToBoy - reactionDistance) / velocityMs * 2)} cy={velToY(collisionSpeed)} r="6" fill="#ef4444" />
+                            )}
+
+                            <line x1={p1.x} y1={p1.y} x2={p1.x} y2={graphHeight - paddingBottom + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                            <text x={p1.x} y={graphHeight - paddingBottom + 20} textAnchor="middle" className="text-[10px] fill-slate-800 font-bold">t=0: Sees Boy</text>
+
+                            <text x={(p1.x + p2.x) / 2} y={p1.y - 10} textAnchor="middle" className={`text-[10px] font-bold ${driverMode === 'AI' ? 'fill-cyan-600' : systemStatus === 'ENGAGED' ? 'fill-indigo-600' : 'fill-amber-600'}`}>
+                                {driverMode === 'AI' ? "Optimization Phase" : "Reaction Phase"}
+                            </text>
+                            <text x={(p1.x + p2.x) / 2} y={yBase - 15} textAnchor="middle" className={`text-[10px] opacity-60 ${driverMode === 'AI' ? 'fill-cyan-600' : systemStatus === 'ENGAGED' ? 'fill-indigo-600' : 'fill-amber-600'}`}>
+                                Area = d1
+                            </text>
+                            <line x1={p2.x} y1={p2.y} x2={p2.x} y2={graphHeight - paddingBottom + 5} stroke="#64748b" strokeWidth="1" strokeDasharray="2" />
+                            
+                            <text x={p2.x + 5} y={graphHeight - paddingBottom - 5} transform={`rotate(-90, ${p2.x + 5}, ${graphHeight - paddingBottom - 5})`} textAnchor="start" className="text-[10px] fill-slate-800 font-bold">
+                                Brakes Applied ({effectiveReactionTime.toFixed(2)}s)
+                            </text>
+
+                            <text x={(p2.x + p3.x) / 2} y={p1.y + (yBase - p1.y)/2} textAnchor="middle" className="text-[10px] fill-blue-600 font-bold bg-white">Braking Phase</text>
+                            <text x={(p2.x + p3.x) / 2} y={yBase - 15} textAnchor="middle" className="text-[10px] fill-blue-600 opacity-60">Area = d2</text>
+                            
+                            <text x={Math.min(p3.x, graphWidth - 20)} y={graphHeight - paddingBottom + 20} textAnchor="middle" className="text-[10px] fill-slate-600">Stopped ({totalTime.toFixed(1)}s)</text>
+                            <text x={p1.x - 5} y={p1.y} textAnchor="end" alignmentBaseline="middle" className="text-[10px] fill-slate-600 font-mono">{velocityMs.toFixed(1)} m/s</text>
+
+                            </svg>
+                        </div>
+                        </div>
+
+                    </div>
+                    {/* MAIN GRID END */}
+                    </div>
+
+                </div>
+
+                {/* Footer */}
+                <div className="absolute bottom-2 right-4 text-xs text-slate-400">
+                    Created by Buddhike Priyadarshana
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BrakingSimulator />);
+    </script>
+</body>
+</html> Load Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- 2. Load React and ReactDOM -->
