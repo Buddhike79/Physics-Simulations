@@ -82,7 +82,7 @@ const gctx = gcanvas.getContext('2d');
 
 let particles = [];
 let pulses = []; // energy pulses
-let showPulses = true;
+let showPulses = false;
 let acMode = false;
 let paused = false;
 let physicsMode = false;
@@ -104,7 +104,7 @@ function togglePulses(){ showPulses = !showPulses; setActive('pulseBtn', showPul
 function createParticle(){ return {x:100+Math.random()*600,y:150}; }
 function adjustParticleCount(target){ while(particles.length < target) particles.push(createParticle()); while(particles.length > target) particles.pop(); }
 
-function createPulse(){ return {x:100, y:150, life:1.2}; }
+function createPulse(){ return {x:100, y:150, life:1.68}; }
 
 function drawPipe(intensity){
   ctx.save();
@@ -296,7 +296,7 @@ function update(){
         pulse.x += (1 + Math.abs(P)/8) * energyDir;
 
         // slower fade (more realistic energy travel)
-        pulse.life -= 0.004;
+        pulse.life -= 0.004; // ~7s lifespan (1.68 / 0.004 ≈ 420 frames ≈ 7s)
 
         ctx.shadowBlur = 25;
         ctx.shadowColor = "#a78bfa";
@@ -330,6 +330,12 @@ function update(){
   drawGraph();
   requestAnimationFrame(update);
 }
+
+// initialize all buttons OFF on load
+setActive('acBtn', false);
+setActive('pauseBtn', false);
+setActive('physicsBtn', false);
+setActive('pulseBtn', false);
 
 update();
 </script>
