@@ -1,1 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electricity Water Analogy Simulation</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; margin:0; }
+  h2 { margin:10px 0; }
+
+  .layout {
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    gap:12px;
+    padding:10px;
+    flex-wrap:nowrap; /* prevent stacking */
+  }
+
+  .panel {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  canvas {
+    background:#020617;
+    border-radius:12px;
+  }
+
+  .controls { margin:8px 0; }
+  label { margin:6px; display:inline-block; }
+  button { margin-left:6px; padding:4px 8px; cursor:pointer; }
+
+  /* ensure everything fits screen height */
+  #sim { width:60vw; height:35vh; }
+  #graph { width:35vw; height:35vh; }
+</style>
+</head>
+<body>
+<h2>⚡ Electricity as Water Flow Simulation (Final Evolution)</h2>
+
+<div class="layout">
+
+  <!-- LEFT: SIMULATION -->
+  <div class="panel">
+    <canvas id="sim" width="900" height="300"></canvas>
+  </div>
+
+  <!-- RIGHT: CONTROLS + GRAPH -->
+  <div class="panel">
+
+    <div class="controls">
+      <label>Voltage <input type="range" id="voltage" min="1" max="10" value="5"></label>
+      <label>Resistance <input type="range" id="resistance" min="1" max="10" value="5"></label>
+      <label>Load <input type="range" id="load" min="1" max="10" value="5"></label>
+      <br>
+      <button onclick="toggleRealPhysics()">Real Physics</button>
+      <button onclick="toggleAC()">AC Mode</button>
+    </div>
+
+    <canvas id="graph" width="500" height="250"></canvas>
+
+  </div>
+
+</div>
+
+<div>
+  <p id="info"></p>
+  <p style="font-size:14px;color:#94a3b8;">⚠️ Density = current. Purple arrows show energy flow (E × B).</p>
+</div>
+
+<script>
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+const gcanvas = document.getElementById('graph');
+const gctx = gcanvas.getContext('2d');
+
+let particles = [];
+let realPhysics = false;
+let acMode = false;
+let time = 0;
+let history = [];
+
+function toggleRealPhysics(){ realPhysics = !realPhysics; }
+function toggleAC(){ acMode = !acMode; }
+
+function createParticle(){ return {x:100+Math.random()*600,y:150}; }
+
+function adjustParticleCount(target){
+  while(particles.length < target) particles.push(createParticle());
+  while(particles.length > target) particles.pop();
+}
+
+// ---------- DRAW HELPERS ----------
+function drawArrow(x1,y1,x2,y2,color,width=2){
+  const headlen = 8;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const angle = Math.atan2(dy, dx);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = width;
+
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2 - headlen*Math.cos(angle - Math.PI/6), y2 - headlen*Math.sin(angle - Math.PI/6));
+  ctx.lineTo(x2 - headlen*Math.cos(angle + Math.PI/6), y2 - headlen*Math.sin(angle + Math.PI/6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawPipe(){
+  ctx.strokeStyle="#38bdf8";
+  ctx.lineWidth=20;
+  ctx.beginPath();
+  ctx.moveTo(100,150);
+  ctx.lineTo(800,150);
+  ctx.stroke();
+}
+
+function drawWheel(speed){
+  ctx.save();
+  ctx.translate(800,150);
+  ctx.rotate(speed);
+  ctx.fillStyle="#facc15";
+  for(let i=0;i<8;i++){ ctx.rotate(Math.PI/4); ctx.fillRect(0,0,60,10); }
+  ctx.restore();
+}
+
+// ---------- REAL PHYSICS ----------
+function drawElectricField(dir){
+  ctx.fillStyle = "#ef4444";
+  for(let x=120;x<800;x+=70){
+    drawArrow(x,120,x+25*dir,120,"#ef4444",3);
+  }
+  ctx.fillText("E-field",120,100);
+}
+
+function drawMagneticField(dir){
+  ctx.strokeStyle = "#22c55e";
+  ctx.fillStyle = "#22c55e";
+
+  const tilt = Math.sin(time * 1.5) * 0.6;
+
+  for(let x=150;x<800;x+=100){
+
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.ellipse(x, 220, 15, 30, tilt, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.ellipse(x, 220, 15, 30, tilt, Math.PI, 2*Math.PI);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    const yOffset = -30 * Math.cos(tilt);
+    const xOffset = 15 * Math.sin(tilt);
+
+    const x1 = x + xOffset;
+    const y1 = 220 + yOffset;
+    const x2 = x1 + (dir>0?15:-15);
+
+    drawArrow(x1,y1,x2,y1,"#22c55e",2);
+  }
+
+  ctx.fillText("B-field (3D animated)",120,210);
+}
+
+function drawEnergyFlow(dir){
+  ctx.fillStyle = "#a78bfa";
+  for(let x=120;x<800;x+=90){
+    drawArrow(x,230,x+35*dir,230,"#a78bfa",4);
+  }
+  ctx.fillText("Energy Flow (E × B)",120,260);
+}
+
+// ---------- GRAPH (UPDATED SCALE) ----------
+function drawGraph(){
+  gctx.clearRect(0,0,gcanvas.width,gcanvas.height);
+
+  const baseY = 230;
+  const topY = 30;
+  const scale = 10; // reduced scale
+
+  gctx.strokeStyle="#ffffff";
+  gctx.beginPath();
+  gctx.moveTo(40,baseY);
+  gctx.lineTo(480,baseY);
+  gctx.moveTo(40,baseY);
+  gctx.lineTo(40,topY);
+  gctx.stroke();
+
+  gctx.fillStyle="#ffffff";
+  gctx.textAlign="right";
+  for(let i=0;i<=10;i++){
+    let value = i*2;
+    let y = baseY - value*scale;
+    gctx.fillText(value,30,y+4);
+  }
+
+  function plot(color,index){
+    gctx.strokeStyle=color;
+    gctx.beginPath();
+    history.forEach((h,i)=>{
+      let x=40+i;
+      let y=baseY - h[index]*scale;
+      if(i===0) gctx.moveTo(x,y);
+      else gctx.lineTo(x,y);
+    });
+    gctx.stroke();
+  }
+
+  plot("#ef4444",0);
+  plot("#22c55e",1);
+  plot("#a78bfa",2);
+
+  gctx.fillStyle="#ef4444";
+  gctx.fillText("Voltage",80,20);
+  gctx.fillStyle="#22c55e";
+  gctx.fillText("Current",200,20);
+  gctx.fillStyle="#a78bfa";
+  gctx.fillText("Power",320,20);
+}
+
+let angle=0;
+
+function update(){
+  const Vslider = parseFloat(document.getElementById('voltage').value);
+  const R = parseFloat(document.getElementById('resistance').value);
+  const load = parseFloat(document.getElementById('load').value);
+
+  time += 0.05;
+  let V = acMode ? Vslider*Math.sin(time) : Vslider;
+
+  const I = V / R;
+  const P = V * I;
+
+  history.push([V,I,P]);
+  if(history.length>400) history.shift();
+
+  const dir = Math.sign(V)||1;
+
+  const targetParticles = Math.floor(Math.abs(I)*30);
+  adjustParticleCount(targetParticles);
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  drawPipe();
+
+  const driftSpeed = 0.5 + Math.abs(I)*0.1;
+
+  particles.forEach(p=>{
+    p.x += driftSpeed*dir;
+    if(p.x>800) p.x=100;
+    if(p.x<100) p.x=800;
+
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  angle += P/(load*50);
+  drawWheel(angle);
+
+  if(realPhysics){
+    drawElectricField(dir);
+    drawMagneticField(dir);
+    drawEnergyFlow(dir);
+  }
+
+  drawGraph();
+
+  document.getElementById('info').innerText =
+    `Voltage: ${V.toFixed(2)} | Current: ${I.toFixed(2)} | Power: ${P.toFixed(2)}`;
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
 
