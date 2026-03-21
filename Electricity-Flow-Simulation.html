@@ -143,6 +143,8 @@ function drawArrow(x1,y1,x2,y2,color){
 }
 
 function drawPhysics(dir, P){
+  // increase label font for real physics mode
+  ctx.font = "18px Arial";
   const energyDir = Math.sign(P) || 1;
   // 🔴 Electric field
   for(let x=120;x<800;x+=80){
@@ -161,7 +163,10 @@ function drawPhysics(dir, P){
     drawArrow(x,120,x+15*dir,120,"#22c55e");
   }
   ctx.fillStyle="#22c55e";
-  ctx.fillText("B-field",120,170);
+  // place label outside wire, centered
+  ctx.textAlign = "center";
+  ctx.fillText("Magnetic Field (B)",450,120);
+  ctx.textAlign = "start";
 
   // 🟣 Energy flow
   for(let x=120;x<800;x+=100){
