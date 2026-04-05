@@ -201,11 +201,15 @@ if(showPulses && Math.random()<Math.abs(P)/40){
 drawPipe(Math.abs(V)/10);
 
 for(let p of particles){
-p.x+=(0.5+Math.abs(I)*0.1)*dir;
+// 🚫 Decouple electron speed from voltage/current (more realistic)
+// Drift speed ~ constant (very slow in reality)
+p.x += 0.6 * dir;
 if(p.x>800) p.x=100;
 if(p.x<100) p.x=800;
 
-ctx.fillStyle="white";
+// 🔵 electron brightness represents energy per electron (voltage)
+const intensity = Math.min(1, Math.abs(V)/10);
+ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7*intensity})`;
 ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
 }
 
@@ -229,17 +233,18 @@ if(showPulses){
 
     // 🔥 NEW: outside wire if physics mode
     if(physicsMode){
-      const offset = 30 + 10*Math.sin(time*2 + i);
+      const radius = 30;
+      const helixPitch = 0.05;
+      const phase = pulse.x * helixPitch + time*2;
+
+      const yOffset = radius * Math.sin(phase);
+      const depth = radius * Math.cos(phase);
+      const visualScale = 0.6 + 0.4*(depth/radius + 1)/2;
+
       ctx.fillStyle = `rgba(167,139,250,${alpha})`;
 
-      // top field flow
       ctx.beginPath();
-      ctx.arc(pulse.x, 150 - offset, size, 0, Math.PI*2);
-      ctx.fill();
-
-      // bottom field flow
-      ctx.beginPath();
-      ctx.arc(pulse.x, 150 + offset, size, 0, Math.PI*2);
+      ctx.arc(pulse.x, 150 + yOffset, size * visualScale, 0, Math.PI*2);
       ctx.fill();
     } else {
       // normal (inside wire)
