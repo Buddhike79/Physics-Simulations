@@ -5,31 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Electricity Water Analogy Simulation</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; margin:0; }
-  h2 { margin:10px 0; }
-
-  .layout { display:flex; justify-content:center; align-items:flex-start; gap:12px; padding:10px; }
-  .panel { display:flex; flex-direction:column; align-items:center; }
-
-  canvas { background:#020617; border-radius:12px; }
-
-  .controls { margin:10px 0; }
-  label { margin:6px; display:inline-block; }
-  button { margin-left:6px; padding:6px 10px; cursor:pointer; border:none; border-radius:6px; background:#1f2937; color:#cbd5f5; }
+body { font-family: Arial, sans-serif; background:#0f172a; color:white; text-align:center; margin:0; }
+h2 { margin:10px 0; }
+.layout { display:flex; justify-content:center; align-items:flex-start; gap:12px; padding:10px; }
+.panel { display:flex; flex-direction:column; align-items:center; }
+canvas { background:#020617; border-radius:12px; }
+.controls { margin:10px 0; }
+label { margin:6px; display:inline-block; }
+button { margin-left:6px; padding:6px 10px; cursor:pointer; border:none; border-radius:6px; background:#1f2937; color:#cbd5f5; }
 button.active { background:#22c55e; color:#022c22; }
-
-  #sim { width:60vw; height:35vh; }
-  #graph { width:35vw; height:50vh; cursor:crosshair; }
+#sim { width:60vw; height:35vh; }
+#graph { width:35vw; height:50vh; cursor:crosshair; }
 </style>
 </head>
 <body>
 <h2>⚡ Electricity Simulation : Water Analogy</h2>
 
 <div class="layout">
-
   <div class="panel">
     <canvas id="sim" width="900" height="300"></canvas>
-
     <div class="controls">
       <label>Voltage <input type="range" id="voltage" min="1" max="10" value="5"></label>
       <label>Resistance <input type="range" id="resistance" min="1" max="10" value="5"></label>
@@ -45,34 +39,10 @@ button.active { background:#22c55e; color:#022c22; }
   <div class="panel">
     <canvas id="graph" width="500" height="400"></canvas>
   </div>
-
 </div>
 
 <div>
   <p id="info"></p>
-  <p id="hoverInfo" style="font-size:14px;color:#94a3b8;"></p>
-</div>
-
-<!-- 🔵 Energy Intensity Legend -->
-<div style="margin-top:10px; font-size:14px; color:#cbd5f5; text-align:center;">
-  <strong>Legend:</strong>
-  <br>
-  ⚪ Electron brightness ∝ Energy per electron (Voltage)
-  <br>
-  ⚡ Higher brightness → Higher energy per coulomb → Higher voltage
-  <br>
-  💡 Number of electrons (particles) → Current
-  <br>
-  ⚙️ Faster wheel rotation → Higher Power (P = V × I)
-  <br><br>
-
-  <!-- Electron Energy (Brightness) Scale -->
-  <div style="margin-bottom:4px; font-size:13px; color:#93c5fd;">Electron Energy (Brightness Scale)</div>
-  <div style="width:300px; height:15px; margin:8px auto; border-radius:8px; background:linear-gradient(to right, rgba(255,255,255,0.2), rgba(255,255,255,1));"></div>
-  <div style="display:flex; justify-content:space-between; width:300px; margin:0 auto; font-size:12px; color:#94a3b8;">
-    <span>Low Energy (Low V)</span>
-    <span>High Energy (High V)</span>
-  </div>
 </div>
 
 <script>
@@ -82,46 +52,44 @@ const gcanvas = document.getElementById('graph');
 const gctx = gcanvas.getContext('2d');
 
 let particles = [];
-let pulses = []; // energy pulses
+let pulses = [];
 let showPulses = false;
 let acMode = false;
 let paused = false;
 let physicsMode = false;
 let time = 0;
 let history = [];
-let hoverIndex = null;
 
 function setActive(id, state){
   const el = document.getElementById(id);
-  if(!el) return;
   if(state) el.classList.add('active'); else el.classList.remove('active');
 }
 
-function toggleAC(){ acMode = !acMode; setActive('acBtn', acMode); }
-function togglePause(){ paused = !paused; setActive('pauseBtn', paused); }
-function togglePhysics(){ physicsMode = !physicsMode; setActive('physicsBtn', physicsMode); }
-function togglePulses(){ showPulses = !showPulses; setActive('pulseBtn', showPulses); }
+function toggleAC(){ acMode=!acMode; setActive('acBtn',acMode);} 
+function togglePause(){ paused=!paused; setActive('pauseBtn',paused);} 
+function togglePhysics(){ physicsMode=!physicsMode; setActive('physicsBtn',physicsMode);} 
+function togglePulses(){ showPulses=!showPulses; setActive('pulseBtn',showPulses);} 
 
 function createParticle(){ return {x:100+Math.random()*600,y:150}; }
-function adjustParticleCount(target){ while(particles.length < target) particles.push(createParticle()); while(particles.length > target) particles.pop(); }
-
-function createPulse(){ return {x:100, y:150, life:1.68}; }
+function adjustParticleCount(n){ while(particles.length<n) particles.push(createParticle()); while(particles.length>n) particles.pop(); }
+function createPulse(){ return {x:100,y:150,life:1.68,energy:0}; }
 
 function drawPipe(intensity){
-  ctx.save();
-  ctx.shadowBlur = 30 * intensity;
-  ctx.shadowColor = "#38bdf8";
-  ctx.strokeStyle="#38bdf8";
-  ctx.lineWidth=40; // increased width
-  ctx.lineCap = "round"; // smoother thick pipe
-  ctx.beginPath();
-  ctx.moveTo(100,150);
-  ctx.lineTo(800,150);
-  ctx.stroke();
-  ctx.restore();
+ctx.strokeStyle="#38bdf8";
+ctx.lineWidth=40;
+ctx.lineCap="round";
+ctx.beginPath();
+ctx.moveTo(100,150);
+ctx.lineTo(800,150);
+ctx.stroke();
 }
 
-function drawWheel(speed){ ctx.save(); ctx.translate(800,150); ctx.rotate(speed); ctx.fillStyle="#facc15"; for(let i=0;i<8;i++){ ctx.rotate(Math.PI/4); ctx.fillRect(0,0,60,10); } ctx.restore(); }
+function drawWheel(speed){
+ctx.save(); ctx.translate(800,150); ctx.rotate(speed);
+ctx.fillStyle="#facc15";
+for(let i=0;i<8;i++){ ctx.rotate(Math.PI/4); ctx.fillRect(0,0,60,10);} 
+ctx.restore();
+}
 
 function drawArrow(x1,y1,x2,y2,color){
   const angle = Math.atan2(y2-y1,x2-x1);
@@ -143,32 +111,27 @@ function drawArrow(x1,y1,x2,y2,color){
 }
 
 function drawPhysics(dir, P){
-  // increase label font for real physics mode
-  ctx.font = "18px Arial";
-  const energyDir = Math.sign(P) || 1;
-  // 🔴 Electric field
+  ctx.font = "16px Arial";
+
+  // Electric field (opposite to electron flow)
   for(let x=120;x<800;x+=80){
-    drawArrow(x,100,x+25*dir,100,"#ef4444");
+    drawArrow(x,100,x-25*dir,100,"#ef4444");
   }
   ctx.fillStyle="#ef4444";
-  ctx.fillText("E-field",120,85);
+  ctx.fillText("Electric Field (E)",120,85);
 
-  // 🟢 Magnetic field
+  // Magnetic field
   ctx.strokeStyle="#22c55e";
   for(let x=150;x<800;x+=120){
     ctx.beginPath();
     ctx.ellipse(x,150,15,30,0,0,Math.PI*2);
     ctx.stroke();
-
-    drawArrow(x,120,x+15*dir,120,"#22c55e");
   }
   ctx.fillStyle="#22c55e";
-  // place label outside wire, centered
-  ctx.textAlign = "center";
-  ctx.fillText("Magnetic Field (B)",450,120);
-  ctx.textAlign = "start";
+  ctx.fillText("Magnetic Field (B)",120,170);
 
-  // 🟣 Energy flow
+  // Energy flow
+  const energyDir = Math.sign(P) || 1;
   for(let x=120;x<800;x+=100){
     drawArrow(x,200,x+30*energyDir,200,"#a78bfa");
   }
@@ -178,40 +141,29 @@ function drawPhysics(dir, P){
 
 function drawGraph(){
   gctx.clearRect(0,0,gcanvas.width,gcanvas.height);
-  const baseY=360, topY=40, scale=15;
 
-  // Y-axis labels
-  gctx.fillStyle="#fff";
-  gctx.textAlign="right";
-  for(let i=0;i<=10;i++){
-    let val = i*2;
-    let y = baseY - val*scale;
-    gctx.fillText(val,35,y+3);
+  const left=40, right=480, bottom=360, top=40;
+  const height=bottom-top;
+
+  let maxVal=1;
+  for(const h of history){
+    maxVal=Math.max(maxVal, Math.abs(h[0]), Math.abs(h[1]), Math.abs(h[2]));
   }
 
-  // grid
-  gctx.strokeStyle="#334155";
-  for(let i=0;i<=10;i++){
-    let y=baseY-i*2*scale;
-    gctx.beginPath();
-    gctx.moveTo(40,y);
-    gctx.lineTo(480,y);
-    gctx.stroke();
-  }
+  const scale=height/(maxVal*1.2);
 
-  // axes
   gctx.strokeStyle="#fff";
   gctx.beginPath();
-  gctx.moveTo(40,baseY); gctx.lineTo(480,baseY);
-  gctx.moveTo(40,baseY); gctx.lineTo(40,topY);
+  gctx.moveTo(left,bottom); gctx.lineTo(right,bottom);
+  gctx.moveTo(left,bottom); gctx.lineTo(left,top);
   gctx.stroke();
 
   function plot(color,index){
     gctx.strokeStyle=color;
     gctx.beginPath();
     history.forEach((h,i)=>{
-      let x=40+i;
-      let y=baseY-h[index]*scale;
+      const x=left+i;
+      const y=bottom-h[index]*scale;
       if(i===0) gctx.moveTo(x,y); else gctx.lineTo(x,y);
     });
     gctx.stroke();
@@ -220,124 +172,103 @@ function drawGraph(){
   plot("#ef4444",0);
   plot("#22c55e",1);
   plot("#a78bfa",2);
+}
 
-  // legend
-  gctx.fillStyle="#ef4444"; gctx.fillText("Voltage",120,20);
-  gctx.fillStyle="#22c55e"; gctx.fillText("Current",220,20);
-  gctx.fillStyle="#a78bfa"; gctx.fillText("Power",320,20);
+function update(){
+if(!paused){
+const Vslider=+document.getElementById('voltage').value;
+const R=+document.getElementById('resistance').value;
+const load=+document.getElementById('load').value;
 
-  // hover values near cursor
-  if(hoverIndex !== null && history[hoverIndex]){
-    const x = 40 + hoverIndex;
-    const V = history[hoverIndex][0];
-    const I = history[hoverIndex][1];
-    const P = history[hoverIndex][2];
+time+=0.05;
+const V=acMode?Vslider*Math.sin(time):Vslider;
+const I=V/R;
+const P=V*I;
 
-    gctx.fillStyle="#fff";
-    gctx.fillText(`V:${V.toFixed(1)} I:${I.toFixed(1)} P:${P.toFixed(1)}`, x+10, 60);
+history.push([V,I,P]); if(history.length>400) history.shift();
+
+const dir=Math.sign(V)||1;
+adjustParticleCount(Math.floor(Math.abs(I)*30));
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(showPulses && Math.random()<Math.abs(P)/40){
+  const pulse = createPulse();
+  pulse.energy = Math.abs(P); // energy carried
+  pulses.push(pulse);
+}
+
+drawPipe(Math.abs(V)/10);
+
+for(let p of particles){
+p.x+=(0.5+Math.abs(I)*0.1)*dir;
+if(p.x>800) p.x=100;
+if(p.x<100) p.x=800;
+
+ctx.fillStyle="white";
+ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
+}
+
+// 🔶 draw energy pulses (PHYSICS UPGRADE: real power flow)
+if(showPulses){
+  for(let i = pulses.length - 1; i >= 0; i--){
+    const pulse = pulses[i];
+    const energyDir = Math.sign(P) || 1;
+
+    // speed depends on power
+    const speed = 0.5 + pulse.energy/10;
+    pulse.x += speed * energyDir;
+
+    // fade slower for high energy
+    pulse.life -= 0.002 + 0.002*(1/(1+pulse.energy));
+
+    // brightness + size proportional to energy
+    const energyScale = Math.min(1, pulse.energy/20);
+    const alpha = Math.max(0, pulse.life) * (0.5 + 0.5*energyScale);
+    const size = 8 + 20 * energyScale;
+
+    ctx.shadowBlur = 30 * energyScale;
+    ctx.shadowColor = "#a78bfa";
+
+    ctx.fillStyle = `rgba(167,139,250,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(pulse.x, pulse.y, size, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    // highlight energy delivery at load
+    if(pulse.x > 780 && pulse.x < 820){
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = "#facc15";
+      ctx.fillStyle = "rgba(250,204,21,0.6)";
+      ctx.beginPath();
+      ctx.arc(800,150,20+10*energyScale,0,Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    if(pulse.life <= 0 || pulse.x > 820 || pulse.x < 80){
+      pulses.splice(i,1);
+    }
   }
 }
 
-gcanvas.addEventListener('mousemove', (e)=>{
-  const rect = gcanvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  hoverIndex = Math.floor(x - 40);
-  if(hoverIndex < 0 || hoverIndex >= history.length) hoverIndex = null;
-});
+angle+=P/(load*50);
+drawWheel(angle);
 
-gcanvas.addEventListener('mouseleave', ()=>{
-  hoverIndex = null;
-});
+if(physicsMode) drawPhysics(dir, P);
+
+document.getElementById('info').innerText=
+"Voltage:"+V.toFixed(2)+" Current:"+I.toFixed(2)+" Power:"+P.toFixed(2);
+}
+
+drawGraph();
+requestAnimationFrame(update);
+}
 
 let angle=0;
 
-function update(){
-  if(!paused){
-    const Vslider = +document.getElementById('voltage').value;
-    const R = +document.getElementById('resistance').value;
-    const load = +document.getElementById('load').value;
-
-    time += 0.05;
-    let V = acMode ? Vslider*Math.sin(time) : Vslider;
-
-    const I = V / R;
-    const P = V * I;
-
-    history.push([V,I,P]);
-    if(history.length>400) history.shift();
-
-    const dir = Math.sign(V)||1;
-    const targetParticles = Math.floor(Math.abs(I)*30);
-    adjustParticleCount(targetParticles);
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // create pulses based on power
-    if(showPulses && Math.random() < Math.abs(P)/40){
-      pulses.push(createPulse());
-    }
-
-    const intensity = Math.min(1, Math.abs(V)/10);
-    drawPipe(intensity);
-
-    particles.forEach(p=>{
-      p.x += (0.5 + Math.abs(I)*0.1)*dir;
-      if(p.x>800) p.x=100;
-      if(p.x<100) p.x=800;
-
-      const intensity = Math.min(1, Math.abs(V)/10);
-      ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.7*intensity})`;
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,6,0,Math.PI*2);
-      ctx.fill();
-    });
-
-    // draw energy pulses (cinematic)
-    if(showPulses){
-      for(let i = pulses.length - 1; i >= 0; i--){
-        const pulse = pulses[i];
-        const energyDir = Math.sign(P) || 1;
-
-        // speed scales with power but not too fast
-        pulse.x += (1 + Math.abs(P)/8) * energyDir;
-
-        // slower fade (more realistic energy travel)
-        pulse.life -= 0.004; // ~7s lifespan (1.68 / 0.004 ≈ 420 frames ≈ 7s)
-
-        ctx.shadowBlur = 25;
-        ctx.shadowColor = "#a78bfa";
-
-        const alpha = Math.max(0, pulse.life);
-        const size = 10 + 10 * alpha;
-
-        ctx.fillStyle = `rgba(167,139,250,${alpha})`;
-        ctx.beginPath();
-        ctx.arc(pulse.x, pulse.y, size, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
-
-        // remove safely
-        if(pulse.life <= 0 || pulse.x > 820 || pulse.x < 80){
-          pulses.splice(i,1);
-        }
-      }
-    }
-
-    angle += P/(load*50);
-    drawWheel(angle);
-
-    if(physicsMode){ drawPhysics(dir, P); }
-
-    document.getElementById('info').innerText =
-      `Voltage: ${V.toFixed(2)} | Current: ${I.toFixed(2)} | Power: ${P.toFixed(2)}`;
-  }
-
-  drawGraph();
-  requestAnimationFrame(update);
-}
-
-// initialize all buttons OFF on load
 setActive('acBtn', false);
 setActive('pauseBtn', false);
 setActive('physicsBtn', false);
@@ -345,6 +276,5 @@ setActive('pulseBtn', false);
 
 update();
 </script>
-
 </body>
 </html>
