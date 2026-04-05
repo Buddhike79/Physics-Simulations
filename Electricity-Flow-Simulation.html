@@ -113,14 +113,31 @@ function drawArrow(x1,y1,x2,y2,color){
 function drawPhysics(dir, P){
   ctx.font = "16px Arial";
 
-  // Electric field (opposite to electron flow)
+  // 🔴 Electric field (inside wire - along center of wire)
   for(let x=120;x<800;x+=80){
-    drawArrow(x,100,x-25*dir,100,"#ef4444");
+    drawArrow(x,150,x-25*dir,150,"#ef4444");
   }
+
+  // 🔴 NEW: Electric field outside (curved realistic lines)
+  ctx.strokeStyle="#ef4444";
+  for(let x=150;x<800;x+=120){
+    // upper curved field line
+    ctx.beginPath();
+    ctx.moveTo(x,150);
+    ctx.bezierCurveTo(x+20,130, x+20,110, x,90);
+    ctx.stroke();
+
+    // lower curved field line
+    ctx.beginPath();
+    ctx.moveTo(x,150);
+    ctx.bezierCurveTo(x-20,170, x-20,190, x,210);
+    ctx.stroke();
+  }
+
   ctx.fillStyle="#ef4444";
   ctx.fillText("Electric Field (E)",120,85);
 
-  // Magnetic field
+  // 🟢 Magnetic field
   ctx.strokeStyle="#22c55e";
   for(let x=150;x<800;x+=120){
     ctx.beginPath();
@@ -130,7 +147,7 @@ function drawPhysics(dir, P){
   ctx.fillStyle="#22c55e";
   ctx.fillText("Magnetic Field (B)",120,170);
 
-  // Energy flow
+  // 🟣 Energy flow
   const energyDir = Math.sign(P) || 1;
   for(let x=120;x<800;x+=100){
     drawArrow(x,200,x+30*energyDir,200,"#a78bfa");
