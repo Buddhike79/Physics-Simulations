@@ -209,35 +209,49 @@ ctx.fillStyle="white";
 ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
 }
 
-// 🔶 draw energy pulses (PHYSICS UPGRADE: real power flow)
+// 🔶 draw energy pulses (REAL ENERGY FLOW MODE)
 if(showPulses){
   for(let i = pulses.length - 1; i >= 0; i--){
     const pulse = pulses[i];
     const energyDir = Math.sign(P) || 1;
 
-    // speed depends on power
     const speed = 0.5 + pulse.energy/10;
     pulse.x += speed * energyDir;
 
-    // fade slower for high energy
     pulse.life -= 0.002 + 0.002*(1/(1+pulse.energy));
 
-    // brightness + size proportional to energy
     const energyScale = Math.min(1, pulse.energy/20);
     const alpha = Math.max(0, pulse.life) * (0.5 + 0.5*energyScale);
-    const size = 8 + 20 * energyScale;
+    const size = 6 + 16 * energyScale;
 
     ctx.shadowBlur = 30 * energyScale;
     ctx.shadowColor = "#a78bfa";
 
-    ctx.fillStyle = `rgba(167,139,250,${alpha})`;
-    ctx.beginPath();
-    ctx.arc(pulse.x, pulse.y, size, 0, Math.PI*2);
-    ctx.fill();
+    // 🔥 NEW: outside wire if physics mode
+    if(physicsMode){
+      const offset = 30 + 10*Math.sin(time*2 + i);
+      ctx.fillStyle = `rgba(167,139,250,${alpha})`;
+
+      // top field flow
+      ctx.beginPath();
+      ctx.arc(pulse.x, 150 - offset, size, 0, Math.PI*2);
+      ctx.fill();
+
+      // bottom field flow
+      ctx.beginPath();
+      ctx.arc(pulse.x, 150 + offset, size, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      // normal (inside wire)
+      ctx.fillStyle = `rgba(167,139,250,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(pulse.x, 150, size, 0, Math.PI*2);
+      ctx.fill();
+    }
 
     ctx.shadowBlur = 0;
 
-    // highlight energy delivery at load
+    // highlight delivery
     if(pulse.x > 780 && pulse.x < 820){
       ctx.shadowBlur = 40;
       ctx.shadowColor = "#facc15";
