@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-n Junction Explorer — Textbook Theory Simulator</title>
+<style>
+  :root{
+    --ink:#17324d; --muted:#647789; --line:#d6e0e8; --bg:#f4f7fb;
+    --p:#d96d82; --n:#4f84d4; --pNeg:#bd3b56; --nPos:#2b6db4;
+    --field:#7850b7; --forward:#2d8a63; --reverse:#b87818; --panel:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Segoe UI,Arial,sans-serif}
+  header{background:linear-gradient(135deg,#173c66,#2a6fbb);color:#fff;padding:20px 0;position:relative}
+  .header-inner{max-width:1360px;margin:0 auto;padding:0 15px;position:relative}
+  .credit-corner{position:absolute;top:2px;right:15px;font-size:11px;opacity:0.85;font-style:italic}
+  header h1{margin:0;font-size:28px}
+  .wrap{max-width:1360px;margin:18px auto;padding:0 15px}
+  .layout{display:grid;grid-template-columns:285px 1fr;gap:14px;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 22px rgba(30,55,85,.07)}
+  .controls{padding:17px}
+  h2{font-size:19px;margin:0 0 12px}
+  h3{font-size:15px;margin:0 0 7px}
+  label{display:block;font-weight:700;margin-top:13px}
+  select,input[type=range],button{width:100%;margin-top:6px}
+  select,button{padding:9px;border:1px solid #cbd6e1;border-radius:8px;background:#fff;color:var(--ink)}
+  button{font-weight:700;cursor:pointer}
+  .primary{background:#2a73bc;color:#fff;border-color:#2a73bc}
+  .value{float:right;color:#2a73bc}
+  .mode{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:7px 0 10px
+  }
+  .mode button{margin-top:0}
+  .mode .selected{background:#2a73bc;color:#fff;border-color:#2a73bc}
+  .note{margin-top:13px;padding:11px 12px;border-left:4px solid #b87818;background:#fff8ea;font-size:13px;line-height:1.48}
+  .checks{margin-top:12px}
+  .checks label{font-weight:500;margin:8px 0;display:flex;align-items:center;gap:7px}
+  .checks input{width:auto;margin:0}
+  .canvasWrap{padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+  canvas{display:block;width:100%;height:490px;background:#fbfdff;border:1px solid var(--line);border-radius:10px}
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:0}
+  .stat{padding:7px;border:1px solid var(--line);border-radius:8px;background:#fcfdff}
+  .k{font-size:11px;color:var(--muted);font-weight:700} .v{font-size:16px;font-weight:800;margin-top:3px}
+  .info{padding:18px;margin-top:16px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fcfdff}
+  .card p{margin:0;color:#43586b;font-size:13px;line-height:1.48}
+  table{border-collapse:collapse;width:100%;margin-top:14px;font-size:13px}
+  th,td{border:1px solid var(--line);padding:7px}
+  th{background:#f0f5f9;text-align:left}
+  .footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:13px}
+
+  .graph-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:-2px}
+  .mini-graph-title{background:#eef4f9;border:1px solid #d4e0e8;border-radius:7px;padding:6px;text-align:center;font-size:12px;font-weight:800;color:#2f4858}
+  .graphs2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .graphCard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}
+  .graphCard canvas{width:100%;height:285px;border:0;border-radius:7px;background:#fbfdff;display:block}
+  .external-banner{background:#f0f5f9;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:#17324d;margin-top:4px}
+
+  @media(max-width:1050px){
+    .layout{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(3,1fr)}
+    .cards{grid-template-columns:1fr}
+    canvas{height:820px}
+    .graphs2{grid-template-columns:1fr}
+    .graphCard canvas{height:270px}
+  }
+  @media(max-width:760px){
+    canvas#canvas{height:620px}
+  }
+  @media(max-width:620px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="credit-corner">prepared by Buddhike Priyadarshana</div>
+    <h1>p-n Junction Explorer</h1>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+    <section class="panel controls">
+      <h2>Controls</h2>
+
+      <div style="font-size:12px;color:#647789;margin-bottom:4px"><b>Quick presets</b> — clicking a preset automatically sets the bias voltage and label.</div>
+      <div class="mode">
+        <button id="equilibriumBtn" class="selected">Equilibrium</button>
+        <button id="forwardBtn">Forward bias</button>
+        <button id="reverseBtn">Reverse bias</button>
+      </div>
+
+      <label>Material
+        <select id="material">
+          <option value="Si">Silicon — V<sub>b</sub> ≈ 0.7 V</option>
+          <option value="Ge">Germanium — V<sub>b</sub> ≈ 0.3 V</option>
+        </select>
+      </label>
+
+      <label>p-side doping <span class="value" id="pdVal">5</span>
+        <input id="pd" type="range" min="1" max="20" value="5">
+      </label>
+
+      <label>n-side doping <span class="value" id="ndVal">5</span>
+        <input id="nd" type="range" min="1" max="20" value="5">
+      </label>
+
+      <label>Applied voltage <i>E<sub>s</sub></i> <span class="value" id="biasVal">0.00 V</span>
+        <input id="bias" type="range" min="-1.50" max="1.50" step="0.01" value="0">
+      </label>
+      <div id="biasModeBox" style="margin-top:9px;padding:10px 12px;border-radius:9px;background:#eef5fb;border:1px solid #cdddea;font-weight:800;color:#17324d;text-align:center">
+        EQUILIBRIUM — no external bias
+      </div>
+
+      <label>Temperature <span class="value" id="tempVal">300 K</span>
+        <input id="temp" type="range" min="250" max="450" value="300">
+      </label>
+
+      <label>Animation speed <span class="value" id="speedVal">2.0×</span>
+        <input id="speed" type="range" min="0.5" max="6" step="0.5" value="2">
+      </label>
+      <label>Carrier display density <span class="value" id="densityVal">High</span>
+        <input id="density" type="range" min="1" max="3" step="1" value="3">
+      </label>
+
+      <button class="primary" id="pause">Pause simulation</button>
+      <button id="reset">Reset simulation</button>
+
+      <div class="checks">
+        <label><input id="showField" type="checkbox" checked> Show internal electric field</label>
+        <label><input id="showBarrier" type="checkbox" checked> Show barrier diagram</label>
+        <label><input id="showMinority" type="checkbox" checked> Show minority carriers</label>
+        <label><input id="showLeakage" type="checkbox"> Detailed mode: show tiny reverse leakage</label>
+      </div>
+
+      <div class="note">
+        <b>Reverse bias:</b> Majority carriers cannot cross the depletion region. Minority carriers can cross it; once they reach the other side, they become majority carriers there and are swept toward the contact rather than returning across the junction.
+      </div>
+
+      <div class="note">
+        <b>I–V characteristic:</b> The lower graph shows the qualitative diode characteristic and a red operating point that follows the applied-voltage slider.
+      </div>
+
+      <div class="note">
+        <b>Potential profile:</b> The graph uses distance <i>x</i> measured from the center of the depletion region, so <b><i>x</i> = 0</b> is exactly at the junction center line. The p side has negative <i>x</i> and the n side positive <i>x</i>.
+      </div>
+    </section>
+
+    <section class="panel canvasWrap">
+      <div style="font-size:14px;font-weight:800;color:#17324d;text-align:center;margin:0 0 2px">
+        p-n Junction Animation
+      </div>
+      <canvas id="canvas"></canvas>
+      
+      <div id="externalStatusBanner" class="external-banner" style="
+        margin:14px auto 8px; max-width:94%; padding:10px 14px;
+        line-height:1.5; text-align:center; box-sizing:border-box;">
+        ● Status
+      </div>
+      <div id="animationInfo" style="
+        margin:0 auto 12px; max-width:94%; padding:8px 12px;
+        line-height:1.45; text-align:center; color:#526878;
+        font-size:12px; font-weight:700; box-sizing:border-box;">
+      </div>
+      <div style="font-size:12px;color:#647789;font-weight:700;margin-top:2px">
+        Carrier size legend: &nbsp; <span style="color:#1967c2">SMALL = minority</span> &nbsp;|&nbsp; <span style="color:#d94b5f">LARGE = majority</span>
+      </div>
+
+      <div class="graphs2">
+        <section class="graphCard"><div class="mini-graph-title">Potential V(x) vs distance</div>
+          <canvas id="potentialCanvas"></canvas>
+        </section>
+        <section class="graphCard"><div class="mini-graph-title">Current I vs voltage V</div>
+          <canvas id="ivCanvas"></canvas>
+        </section>
+      </div>
+      <div id="animStatus" style="font-size:13px;font-weight:700;color:#2d8a63;margin-top:6px">● Animation running</div>
+      <div class="stats">
+        <div class="stat"><div class="k">State</div><div class="v" id="state">Equilibrium</div></div>
+        <div class="stat"><div class="k">Depletion width</div><div class="v" id="width">--</div></div>
+        <div class="stat"><div class="k">Barrier V<sub>b</sub></div><div class="v" id="barrier">--</div></div>
+        <div class="stat"><div class="k">Forward current</div><div class="v" id="forwardCurrent">0.00</div></div>
+        <div class="stat"><div class="k">Reverse current</div><div class="v" id="reverseCurrent">0</div></div>
+        <div class="stat"><div class="k">Current status</div><div class="v" id="currentStatus">None</div></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel info">
+    <h2>Carrier Behavior Across Bias Conditions</h2>
+    <table>
+      <tr><th>Bias</th><th>Majority carriers</th><th>Minority carriers</th></tr>
+      <tr><td>Equilibrium</td><td>Diffusion occurs</td><td>Drift across depletion region occurs</td></tr>
+      <tr><td>Forward bias</td><td>Cross strongly</td><td>Can also cross</td></tr>
+      <tr><td>Reverse bias</td><td>Blocked by barrier</td><td>Cross due to electric field</td></tr>
+      <tr><td>Breakdown</td><td>Very large carrier movement</td><td>Very large carrier movement</td></tr>
+    </table>
+
+    <h2 style="margin-top:24px">What the simulator is teaching</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>1. Formation of the junction</h3>
+        <p>Majority holes diffuse p → n and majority electrons diffuse n → p. Near the junction they recombine.</p>
+      </div>
+      <div class="card">
+        <h3>2. Fixed ions</h3>
+        <p>The p-side depletion region is shown with fixed negative acceptor ions. The n-side depletion region is shown with fixed positive donor ions.</p>
+      </div>
+      <div class="card">
+        <h3>3. Internal field and barrier</h3>
+        <p>The separated fixed charges create an internal electric field from the n side toward the p side and an internal potential barrier (V<sub>b</sub>). The book gives about 0.7 V for Si and 0.3 V for Ge at room temperature.</p>
+      </div>
+      <div class="card">
+        <h3>4. Reverse bias</h3>
+        <p>p is connected to the negative terminal and n to the positive terminal. Majority carriers are driven away from the junction, so the depletion region widens and the barrier increases to (V<sub>b</sub> + E<sub>s</sub>). The main model treats the junction current as zero.</p>
+      </div>
+      <div class="card">
+        <h3>5. Forward bias</h3>
+        <p>p is positive and n is negative. Majority carriers approach the depletion region. If the applied voltage is still below the barrier, they do <b>not cross</b> and there is no appreciable current. At or above the barrier, they cross and a large forward current appears.</p>
+      </div>
+      <div class="card">
+        <h3>6. Minority carriers</h3>
+        <p><b>Animation convention:</b> Minority carriers are drawn small; when a minority carrier crosses into the other semiconductor, it is redrawn large because it is now a majority carrier there.<br><br><b>Minority carriers cross the depletion region.</b> An electron moving p → n becomes a majority electron in the n-region. A hole moving n → p becomes a majority hole in the p-region. They are then swept toward the appropriate contact and do not return through the junction.</p>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Condition</th><th>Connection</th><th>Depletion region</th><th>Barrier</th><th>Majority-carrier current</th></tr>
+      <tr><td>Equilibrium</td><td>No external bias</td><td>Established</td><td>Internal V<sub>b</sub></td><td>No net current</td></tr>
+      <tr><td>Forward bias, below barrier</td><td>p positive, n negative</td><td>Narrows</td><td>Reduced</td><td>Still very small</td></tr>
+      <tr><td>Forward bias, above barrier</td><td>p positive, n negative</td><td>Strongly narrowed</td><td>Overcome</td><td>Large forward current</td></tr>
+      <tr><td>Reverse bias</td><td>p negative, n positive</td><td>Widens</td><td>Increases to V<sub>b</sub> + E<sub>s</sub></td><td>Zero in main textbook approximation</td></tr>
+      <tr><td>Reverse + leakage option</td><td>p negative, n positive</td><td>Widens</td><td>Increases</td><td>Tiny minority-carrier current</td></tr>
+    </table>
+
+    <div class="footer">
+      Based directly on the Grade 13 Physics Unit 9 p-n-junction discussion and Figures 1.9–1.13. The simulator intentionally uses a qualitative model for the depletion width, barrier, and current rather than reproducing a full semiconductor device equation set.
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const potentialCanvas = document.getElementById("potentialCanvas");
+  const potentialCtx = potentialCanvas.getContext("2d");
+  const ivCanvas = document.getElementById("ivCanvas");
+  const ivCtx = ivCanvas.getContext("2d");
+
+  const material = document.getElementById("material");
+  const pd = document.getElementById("pd");
+  const nd = document.getElementById("nd");
+  const bias = document.getElementById("bias");
+  const temp = document.getElementById("temp");
+  const speed = document.getElementById("speed");
+  const density = document.getElementById("density");
+
+  const pdVal = document.getElementById("pdVal");
+  const ndVal = document.getElementById("ndVal");
+  const biasVal = document.getElementById("biasVal");
+  const tempVal = document.getElementById("tempVal");
+  const speedVal = document.getElementById("speedVal");
+  const densityVal = document.getElementById("densityVal");
+
+  const stateEl = document.getElementById("state");
+  const widthEl = document.getElementById("width");
+  const barrierEl = document.getElementById("barrier");
+  const forwardCurrentEl = document.getElementById("forwardCurrent");
+  const reverseCurrentEl = document.getElementById("reverseCurrent");
+  const currentStatusEl = document.getElementById("currentStatus");
+
+  const showField = document.getElementById("showField");
+  const showBarrier = document.getElementById("showBarrier");
+  const showMinority = document.getElementById("showMinority");
+  const showLeakage = document.getElementById("showLeakage");
+
+  const pauseBtn = document.getElementById("pause");
+  const resetBtn = document.getElementById("reset");
+  const equilibriumBtn = document.getElementById("equilibriumBtn");
+  const forwardBtn = document.getElementById("forwardBtn");
+  const reverseBtn = document.getElementById("reverseBtn");
+
+  let running = true;
+  let lastTime = 0;
+  let particles = [];
+  let forcedMode = "equilibrium";
+
+  function resize() {
+    function sizeCanvas(c, h) {
+      const r = c.getBoundingClientRect();
+      const d = window.devicePixelRatio || 1;
+      c.width = Math.max(500, Math.floor(r.width * d));
+      c.height = Math.max(200, Math.floor(h * d));
+      const cx = c.getContext("2d");
+      cx.setTransform(d,0,0,d,0,0);
+    }
+    sizeCanvas(canvas, 490);
+    sizeCanvas(potentialCanvas, 255);
+    sizeCanvas(ivCanvas, 255);
+  }
+
+  window.addEventListener("resize", resize);
+
+  function baseBarrier() {
+    return material.value === "Si" ? 0.70 : 0.30;
+  }
+
+  function model() {
+    const V = Number(bias.value);
+    const P = Number(pd.value);
+    const N = Number(nd.value);
+    const T = Number(temp.value);
+    const V0 = baseBarrier();
+
+    const baseW = 190 * (1/Math.sqrt(P) + 1/Math.sqrt(N)) / 2;
+    let W = baseW;
+    let barrier = V0;
+
+    const VBR = 1.0; 
+    let state = Math.abs(V) < 0.005 ? "Equilibrium" : (V > 0 ? "Forward bias" : "Reverse bias");
+
+    if (state === "Forward bias") {
+      const Vf = Math.max(0, V);
+      barrier = Math.max(0, V0 - Vf);
+      W = baseW / Math.sqrt(1 + Math.min(Vf,1.4)/Math.max(V0,0.1));
+    } else if (state === "Reverse bias") {
+      const Vr = Math.max(0, -V);
+      barrier = V0 + Vr;
+      W = baseW * Math.sqrt(1 + Math.min(Vr,1.4)/Math.max(V0,0.1));
+    }
+
+    W = Math.max(34, Math.min(260, W));
+
+    let forwardCurrent = 0;
+    if (state === "Forward bias") {
+      const Vf = Math.max(0, V);
+      forwardCurrent = Vf >= V0 ? Math.min(999, (Vf-V0)*220) : 0;
+    }
+
+    let reverseCurrent = 0;
+    let breakdown = false;
+    if (state === "Reverse bias") {
+      const Vr = Math.max(0, -V);
+      if (Vr >= VBR) {
+        breakdown = true;
+        reverseCurrent = Math.min(999, 0.05 + 18 * Math.pow(Vr - VBR, 1.35));
+      } else if (showLeakage.checked) {
+        reverseCurrent = Math.min(0.01, 0.0015 + 0.00002*Math.max(0,T-250));
+      }
+    }
+
+    return {V,P,N,T,V0,VBR,W,barrier,state,forwardCurrent,reverseCurrent,breakdown};
+  }
+
+  function resetParticles() {
+    particles = [];
+    const W = canvas.clientWidth;
+    const d = Number(density.value);
+    const majorityCount = d === 1 ? 35 : d === 2 ? 60 : 95;
+    const minorityCount = d === 1 ? 8 : d === 2 ? 13 : 20;
+
+    for (let i=0; i<majorityCount; i++) {
+      particles.push({t:"h", maj:true, x:55+Math.random()*210, y:78+Math.random()*255,
+        vx:(Math.random()-0.5)*0.18, vy:(Math.random()-0.5)*0.18});
+      particles.push({t:"e", maj:true, x:W-270+Math.random()*220, y:78+Math.random()*255,
+        vx:(Math.random()-0.5)*0.18, vy:(Math.random()-0.5)*0.18});
+    }
+
+    for (let i=0; i<minorityCount; i++) {
+      particles.push({t:"e", maj:false, x:60+Math.random()*200, y:82+Math.random()*250,
+        vx:(Math.random()-0.5)*0.13, vy:(Math.random()-0.5)*0.13});
+      if (showMinority.checked) {
+        particles.push({t:"h", maj:false, x:W-260+Math.random()*205, y:82+Math.random()*250,
+          vx:(Math.random()-0.5)*0.13, vy:(Math.random()-0.5)*0.13});
+      }
+    }
+  }
+
+  function update(dt) {
+    if (!running) return;
+
+    const m = model();
+    const W = canvas.clientWidth;
+    const C = W * 0.53;
+    const L = C - m.W / 2;
+    const R = C + m.W / 2;
+    const s = Number(speed.value);
+    const isBreakdown = (m.state === "Reverse bias" && m.breakdown);
+
+    for (const p of particles) {
+      if (isBreakdown) {
+        if (p.t === "h") {
+          p.x -= 2.2 * s * dt;
+          if (p.x < 45) p.x = W - 45;
+        } else {
+          p.x += 2.2 * s * dt;
+          if (p.x > W - 45) p.x = 45;
+        }
+        p.y += p.vy * dt * 0.5 * s;
+        if (p.y < 82) p.y = 82;
+        if (p.y > 325) p.y = 325;
+        continue;
+      }
+
+      const oldX = p.x;
+      p.x += p.vx * dt * 0.85 * s;
+      p.y += p.vy * dt * 0.85 * s;
+
+      if (p.y < 82) { p.y = 82; p.vy = Math.abs(p.vy); }
+      if (p.y > 325) { p.y = 325; p.vy = -Math.abs(p.vy); }
+
+      if (m.state === "Equilibrium") {
+        if (!p.maj) {
+          if (p.t === "e") {
+            p.x += 0.14 * s * dt;
+            if (p.x >= R + 4) {
+              p.x = R + 10;
+              p.maj = true;
+              p.dest = "n";
+              p.converted = 30;
+              p.vx = 0.12;
+            }
+          } else {
+            p.x -= 0.14 * s * dt;
+            if (p.x <= L - 4) {
+              p.x = L - 10;
+              p.maj = true;
+              p.dest = "p";
+              p.converted = 30;
+              p.vx = -0.12;
+            }
+          }
+          continue;
+        }
+
+        if (p.dest === "n" && p.t === "e") {
+          p.x += 0.065 * s * dt;
+          if (p.converted > 0) p.converted -= dt;
+          if (p.x > W - 35) {
+            p.maj = false; p.dest = ""; p.converted = 0;
+            p.x = 70; p.y = 95 + Math.random()*210; p.vx = 0.05;
+          }
+          continue;
+        }
+        if (p.dest === "p" && p.t === "h") {
+          p.x -= 0.065 * s * dt;
+          if (p.converted > 0) p.converted -= dt;
+          if (p.x < 35) {
+            p.maj = false; p.dest = ""; p.converted = 0;
+            p.x = W - 70; p.y = 95 + Math.random()*210; p.vx = -0.05;
+          }
+          continue;
+        }
+
+        if (p.maj && !p.dest) {
+          if (p.t === "h") {
+            if (p.x > L - 10) { p.x = L - 10; p.vx = -Math.abs(p.vx); }
+            if (p.x < 55) { p.x = 55; p.vx = Math.abs(p.vx); }
+          } else {
+            if (p.x < R + 10) { p.x = R + 10; p.vx = Math.abs(p.vx); }
+            if (p.x > W - 35) { p.x = W - 35; p.vx = -Math.abs(p.vx); }
+          }
+        }
+        continue;
+      }
+
+      if (m.state === "Forward bias") {
+        if (!p.maj) {
+          if (p.t === "e") {
+            p.x -= 0.025 * s * dt;
+            if (p.x > L - 8) p.x = L - 8;
+            if (p.x < 55) p.x = 55;
+          } else {
+            p.x += 0.025 * s * dt;
+            if (p.x < R + 8) p.x = R + 8;
+            if (p.x > W - 35) p.x = W - 35;
+          }
+          continue;
+        }
+
+        const conducting = m.V >= m.V0;
+
+        if (conducting) {
+          p.x += (p.t === "h" ? 0.055 : -0.055) * s * dt;
+          if (p.t === "h" && p.x > W - 25) p.x = 65;
+          if (p.t === "e" && p.x < 25) p.x = W - 65;
+          continue;
+        }
+
+        p.x += (p.t === "h" ? 0.016 : -0.016) * s * dt;
+        if (p.t === "h") {
+          if (p.x > L - 10) { p.x = L - 10; p.vx = -Math.abs(p.vx); }
+          if (p.x < 55) { p.x = 55; p.vx = Math.abs(p.vx); }
+        } else {
+          if (p.x < R + 10) { p.x = R + 10; p.vx = Math.abs(p.vx); }
+          if (p.x > W - 35) { p.x = W - 35; p.vx = -Math.abs(p.vx); }
+        }
+        continue;
+      }
+
+      if (m.state === "Reverse bias") {
+        if (!p.maj) {
+          if (p.t === "e") {
+            p.x += (showLeakage.checked ? 0.050 : 0.030) * s * dt;
+            if (p.x >= R + 4) {
+              p.x = R + 10;
+              p.maj = true;
+              p.dest = "n";
+              p.converted = 30;
+              p.vx = 0.15;
+            }
+          } else {
+            p.x -= (showLeakage.checked ? 0.050 : 0.030) * s * dt;
+            if (p.x <= L - 4) {
+              p.x = L - 10;
+              p.maj = true;
+              p.dest = "p";
+              p.converted = 30;
+              p.vx = -0.15;
+            }
+          }
+          continue;
+        }
+
+        if (p.dest === "n" && p.t === "e") {
+          p.x += 0.06 * s * dt;
+          if (p.converted > 0) p.converted -= dt;
+          if (p.x > W - 30) {
+            p.maj = false; p.dest = ""; p.converted = 0;
+            p.x = 75; p.y = 95 + Math.random()*210; p.vx = 0.06;
+          }
+          continue;
+        }
+
+        if (p.dest === "p" && p.t === "h") {
+          p.x -= 0.06 * s * dt;
+          if (p.converted > 0) p.converted -= dt;
+          if (p.x < 30) {
+            p.maj = false; p.dest = ""; p.converted = 0;
+            p.x = W - 75; p.y = 95 + Math.random()*210; p.vx = -0.06;
+          }
+          continue;
+        }
+
+        if (p.maj) {
+          if (p.t === "h") {
+            p.x -= 0.065 * s * dt;
+            if (p.x > L - 10) p.x = L - 10;
+            if (p.x < 55) p.x = 55;
+          } else {
+            p.x += 0.065 * s * dt;
+            if (p.x < R + 10) p.x = R + 10;
+            if (p.x > W - 35) p.x = W - 35;
+          }
+        }
+      }
+    }
+  }
+
+  function drawArrow(x1,y1,x2,y2,color,width=2) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const a = Math.atan2(y2-y1,x2-x1);
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-8*Math.cos(a-.45),y2-8*Math.sin(a-.45));
+    ctx.lineTo(x2-8*Math.cos(a+.45),y2-8*Math.sin(a+.45));
+    ctx.closePath(); ctx.fill();
+  }
+
+
+  function drawPotentialProfile(m) {
+    const W = potentialCanvas.clientWidth;
+    const H = potentialCanvas.clientHeight;
+    potentialCtx.clearRect(0,0,W,H);
+
+    const gx=42, gy=28, gw=W-60, gh=H-62;
+    const xMin=-180, xMax=180;
+    const yMin=-0.05, yMax=Math.max(.85,m.barrier+.15);
+    const xPix=x=>gx+(x-xMin)/(xMax-xMin)*gw;
+    const yPix=v=>gy+gh-(v-yMin)/(yMax-yMin)*gh;
+    const x0=xPix(0), y0=yPix(0);
+
+    potentialCtx.fillStyle="#17324d";
+    potentialCtx.font="bold 14px Segoe UI";
+    potentialCtx.fillText("Potential V(x) vs distance",10,18);
+
+    potentialCtx.strokeStyle="#8597a6";
+    potentialCtx.lineWidth=1;
+    potentialCtx.beginPath();potentialCtx.moveTo(gx,y0);potentialCtx.lineTo(gx+gw,y0);potentialCtx.stroke();
+    potentialCtx.beginPath();potentialCtx.moveTo(x0,gy);potentialCtx.lineTo(x0,gy+gh);potentialCtx.stroke();
+
+    potentialCtx.fillStyle="#445b6c";
+    potentialCtx.font="11px Segoe UI";
+    potentialCtx.fillText("V (V)",6,35);
+    potentialCtx.fillText("distance x",W-65,y0-5);
+
+    [-150,-75,0,75,150].forEach(v=>{
+      const px=xPix(v);
+      potentialCtx.strokeStyle="#aab8c4";
+      potentialCtx.beginPath();potentialCtx.moveTo(px,y0-3);potentialCtx.lineTo(px,y0+3);potentialCtx.stroke();
+      potentialCtx.fillStyle=v===0?"#17324d":"#66798a";
+      potentialCtx.font=v===0?"bold 11px Segoe UI":"10px Segoe UI";
+      potentialCtx.fillText(v===0?"0":String(v),px-8,y0+15);
+    });
+
+    const left=-Math.min(160,m.W), right=Math.min(160,m.W);
+    potentialCtx.setLineDash([4,4]);potentialCtx.strokeStyle="#a98fb8";
+    [left,right].forEach(x=>{
+      const px=xPix(x);
+      potentialCtx.beginPath();potentialCtx.moveTo(px,gy);potentialCtx.lineTo(px,gy+gh);potentialCtx.stroke();
+    });
+    potentialCtx.setLineDash([]);
+
+    const total=m.barrier;
+    potentialCtx.strokeStyle="#b67617";potentialCtx.lineWidth=2.5;
+    potentialCtx.beginPath();
+    const n=220;
+    for(let i=0;i<=n;i++){
+      const x=left+(right-left)*i/n;
+      let v=0;
+      if(x<=left)v=0;
+      else if(x>=right)v=total;
+      else{
+        const u=(x-left)/(right-left);
+        const s=u*u*(3-2*u);
+        v=total*s;
+      }
+      const px=xPix(x), py=yPix(v);
+      if(i===0)potentialCtx.moveTo(px,py);else potentialCtx.lineTo(px,py);
+    }
+    potentialCtx.stroke();
+
+    potentialCtx.fillStyle="#bd3b56";potentialCtx.font="bold 11px Segoe UI";potentialCtx.fillText("p side",xPix(-160),yPix(0)-5);
+    potentialCtx.fillStyle="#2b6db4";potentialCtx.fillText("n side",xPix(112),yPix(total)-5);
+
+    potentialCtx.fillStyle="#b67617";potentialCtx.font="bold 11px Segoe UI";
+    potentialCtx.fillText(`ΔV ≈ ${total.toFixed(2)} V`,x0+7,yPix(total/2));
+
+    potentialCtx.fillStyle="#647789";potentialCtx.font="10px Segoe UI";
+    potentialCtx.fillText("x = 0 is the center of the depletion region",10,H-7);
+  }
+
+  function drawIVGraph(m) {
+    const W = ivCanvas.clientWidth;
+    const H = ivCanvas.clientHeight;
+    ivCtx.clearRect(0,0,W,H);
+
+    const gx = 42, gy = 28;
+    const gw = W - 60, gh = H - 58;
+
+    const xmin = -1.60, xmax = 1.60;
+    const ymin = -1.20, ymax = 1.20;
+
+    const xp = v => gx + (v-xmin)/(xmax-xmin)*gw;
+    const yp = i => gy + gh - (i-ymin)/(ymax-ymin)*gh;
+
+    const x0 = xp(0);
+    const y0 = yp(0);
+    const knee = m.V0;
+    const Vbreak = -1.0; 
+
+    ivCtx.strokeStyle = "#17324d";
+    ivCtx.lineWidth = 1.2;
+
+    ivCtx.beginPath();
+    ivCtx.moveTo(gx, y0);
+    ivCtx.lineTo(gx + gw, y0);
+    ivCtx.stroke();
+
+    ivCtx.beginPath();
+    ivCtx.moveTo(x0, gy);
+    ivCtx.lineTo(x0, gy + gh);
+    ivCtx.stroke();
+
+    function drawAxisArrow(x1, y1, angle) {
+      ivCtx.beginPath();
+      ivCtx.moveTo(x1, y1);
+      ivCtx.lineTo(x1 - 6*Math.cos(angle - 0.5), y1 - 6*Math.sin(angle - 0.5));
+      ivCtx.lineTo(x1 - 6*Math.cos(angle + 0.5), y1 - 6*Math.sin(angle + 0.5));
+      ivCtx.closePath();
+      ivCtx.fill();
+    }
+    
+    ivCtx.fillStyle = "#17324d";
+    drawAxisArrow(gx + gw, y0, 0); 
+    drawAxisArrow(gx, y0, Math.PI); 
+    drawAxisArrow(x0, gy, -Math.PI/2); 
+    drawAxisArrow(x0, gy + gh, Math.PI/2); 
+
+    ivCtx.font = "bold 13px Segoe UI";
+    ivCtx.fillText("I_F", x0 + 10, gy + 11);
+    ivCtx.fillText("I_R", x0 + 10, gy + gh - 4);
+    ivCtx.fillText("V−", gx + 1, y0 - 12);
+    ivCtx.fillText("V+", gx + gw - 25, y0 - 12);
+
+    ivCtx.save();
+    ivCtx.beginPath();
+    ivCtx.rect(gx, gy, gw, gh);
+    ivCtx.clip();
+
+    ivCtx.strokeStyle = "#2a73bc";
+    ivCtx.lineWidth = 2.7;
+    
+    ivCtx.beginPath();
+    ivCtx.moveTo(xp(Vbreak), yp(-0.8));
+    ivCtx.quadraticCurveTo(xp(Vbreak), yp(-0.06), xp(Vbreak + 0.1), yp(-0.06));
+    
+    ivCtx.lineTo(xp(-0.1), yp(-0.06));
+    ivCtx.quadraticCurveTo(xp(0), yp(0), xp(0.1), yp(0));
+
+    ivCtx.lineTo(xp(knee - 0.1), yp(0));
+
+    for (let v = knee - 0.1; v <= xmax; v += 0.05) {
+      let iVal = 0;
+      if (v > knee) {
+        iVal = 0.05 + 1.1 * Math.pow((v - knee) / (xmax - knee), 2.0);
+      } else {
+        iVal = 0.05 * Math.pow((v - (knee - 0.1)) / 0.1, 2);
+      }
+      ivCtx.lineTo(xp(v), yp(iVal));
+    }
+    ivCtx.stroke();
+
+    ivCtx.beginPath();
+    ivCtx.setLineDash([4, 4]);
+    ivCtx.moveTo(xp(Vbreak), yp(-0.8));
+    ivCtx.lineTo(xp(Vbreak), yp(-1.15));
+    ivCtx.stroke();
+    ivCtx.setLineDash([]);
+
+    const v = m.V;
+    let dotX, dotY;
+    
+    if (v < Vbreak) {
+      dotX = xp(Vbreak);
+      dotY = yp(-0.06 - ((Vbreak - v) * 1.5)); 
+    } else if (v < -0.1) {
+      dotX = xp(v);
+      dotY = yp(-0.06);
+    } else if (v < 0) {
+      dotX = xp(v);
+      dotY = yp(-0.06 * (v / -0.1));
+    } else if (v < knee - 0.1) {
+      dotX = xp(v);
+      dotY = yp(0);
+    } else if (v <= knee) {
+      dotX = xp(v);
+      dotY = yp(0.05 * Math.pow((v - (knee - 0.1)) / 0.1, 2));
+    } else {
+      dotX = xp(v);
+      dotY = yp(0.05 + 1.1 * Math.pow((v - knee) / (xmax - knee), 2.0));
+    }
+
+    ivCtx.fillStyle = "#d94b5f";
+    ivCtx.beginPath();
+    ivCtx.arc(dotX, dotY, 5.5, 0, Math.PI*2);
+    ivCtx.fill();
+    ivCtx.restore();
+
+    ivCtx.fillStyle = "#9b6814";
+    ivCtx.font = "bold 13px Segoe UI";
+    ivCtx.fillText(`${knee.toFixed(1)} V`, xp(knee) - 10, y0 + 16);
+  }
+
+  
+function updateExternalAnimationInfo(m) {
+  const banner = document.getElementById("externalStatusBanner");
+  const info = document.getElementById("animationInfo");
+  if (!banner || !info) return;
+
+  const V = m ? Number(m.V) : Number(bias.value);
+  const V0 = m ? Number(m.V0) : baseBarrier();
+  const VBR = m ? Number(m.VBR) : 1.0;
+
+  if (Math.abs(V) < 0.005) {
+    banner.textContent = "● Status: EQUILIBRIUM";
+    info.textContent = "Majority carriers diffuse and minority carriers drift across the depletion region; opposing currents balance, so there is no net current.";
+  } else if (V > 0) {
+    banner.textContent = "● Status: FORWARD BIAS";
+    info.textContent = V < V0
+      ? `Barrier is reduced. Below the ${V0.toFixed(1)} V teaching threshold, there is no appreciable majority-carrier current; minority carriers can still cross.`
+      : "Barrier is greatly reduced. Large majority-carrier flow produces forward current. Minority carriers can also cross and become majority carriers after entering the opposite region.";
+  } else if (m && m.breakdown) {
+    banner.textContent = "● Status: REVERSE BREAKDOWN";
+    info.textContent = "The electric field is very strong. A large number of carriers are generated/accelerated, so reverse current rises sharply. The animation now shows a large, rapid reverse carrier flow without trapping.";
+  } else {
+    banner.textContent = "● Status: REVERSE BIAS";
+    info.textContent = `Majority carriers are blocked by the increased barrier. Only minority carriers cross the depletion region, producing tiny reverse leakage until the breakdown voltage of ${VBR.toFixed(1)} V is reached.`;
+  }
+}
+
+function draw() {
+  const currentModel = model();
+  updateExternalAnimationInfo(currentModel);
+
+    const W = canvas.clientWidth, H = canvas.clientHeight, m = currentModel;
+    ctx.clearRect(0,0,W,H);
+
+    const C = W * 0.53;
+    const L = C - m.W/2;
+    const R = C + m.W/2;
+
+    ctx.fillStyle="rgba(217,109,130,.16)";
+    ctx.fillRect(45,68,L-45,275);
+    ctx.fillStyle="rgba(79,132,212,.16)";
+    ctx.fillRect(R,68,W-R-35,275);
+    ctx.fillStyle="rgba(164,135,193,.22)";
+    ctx.fillRect(L,68,m.W,275);
+
+    ctx.fillStyle="#102a43"; ctx.font="bold 20px Segoe UI";
+    ctx.fillText("p-type",55,34);
+    ctx.fillText("n-type",W-115,34);
+
+    ctx.font="bold 17px Segoe UI";
+    if (m.state === "Reverse bias") {
+      ctx.fillStyle="#a86412";
+      ctx.fillText("REVERSE BIASED", C-78, 34);
+    } else if (m.state === "Forward bias") {
+      ctx.fillStyle="#2d8a63";
+      ctx.fillText("FORWARD BIASED", C-85, 34);
+    } else {
+      ctx.fillStyle="#4c6478";
+      ctx.fillText("EQUILIBRIUM", C-65, 34);
+    }
+    ctx.fillStyle="#2f4858"; ctx.font="bold 12px Segoe UI";
+    ctx.fillText("holes = majority carriers",55,51);
+    ctx.fillText("electrons = majority carriers",W-190,51);
+
+    for (let y=90;y<=320;y+=46) {
+      for (let x=62;x<W-42;x+=38) {
+        if (x>L && x<R) continue;
+        ctx.fillStyle = x<C ? "#d96d82" : "#4f84d4";
+        ctx.globalAlpha=.38;
+        ctx.beginPath();ctx.arc(x,y,3.2,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
+
+    const ionCount = Math.max(6,Math.round(m.W/18));
+    const pIonX = L + m.W*0.27;
+    const nIonX = L + m.W*0.73;
+    const top=90,bottom=320,dy=(bottom-top)/(ionCount-1);
+
+    for(let i=0;i<ionCount;i++){
+      const y=top+i*dy;
+
+      ctx.fillStyle="#bd3b56";
+      ctx.beginPath();ctx.arc(pIonX,y,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText("−",pIonX,y);
+
+      ctx.fillStyle="#2b6db4";
+      ctx.beginPath();ctx.arc(nIonX,y,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";
+      ctx.fillText("+",nIonX,y);
+    }
+    ctx.textAlign="left";ctx.textBaseline="alphabetic";
+
+    ctx.fillStyle = "rgba(166,135,193,.10)";
+    ctx.fillRect(L, 68, m.W, 275);
+    ctx.strokeStyle = "rgba(120,90,150,.28)";
+    ctx.setLineDash([4,4]);
+    ctx.strokeRect(L, 68, m.W, 275);
+    ctx.setLineDash([]);
+
+    for(const p of particles){
+      ctx.globalAlpha = p.maj ? 1 : 0.48;
+      ctx.fillStyle = p.t==="h" ? "#d94b5f" : "#1967c2";
+
+      let r;
+      if (p.maj) {
+        r = (p.t==="h") ? 8.5 : 7.6;
+      } else {
+        r = (p.t==="h") ? 4.5 : 4.0;
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,r,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle="#fff";
+      ctx.font = p.maj ? "bold 12px Arial" : "bold 9px Arial";
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(p.t==="h"?"+":"−",p.x,p.y);
+      ctx.textAlign="left";ctx.textBaseline="alphabetic";
+      ctx.globalAlpha=1;
+
+      if (p.converted > 0) {
+        ctx.fillStyle="#2d8a63";
+        ctx.font="bold 13px Segoe UI";
+        ctx.fillText("→ MAJORITY",p.x+12,p.y-11);
+      }
+    }
+
+    if(showField.checked){
+      for(let y=112;y<=300;y+=46) drawArrow(C+m.W*.33,y,C-m.W*.33,y,"#7850b7",2);
+      ctx.fillStyle="#7850b7";ctx.font="bold 12px Segoe UI";
+    }
+
+    ctx.strokeStyle="#748899";ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(C,68);ctx.lineTo(C,350);ctx.stroke();ctx.setLineDash([]);
+
+    const pathY=425;
+    if(m.state==="Forward bias" && m.forwardCurrent>0){
+      ctx.strokeStyle="#2d8a63";ctx.fillStyle="#2d8a63";ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(70,pathY);ctx.lineTo(W-70,pathY);ctx.stroke();
+      drawArrow(W-112,pathY,W-72,pathY,"#2d8a63",3);
+      ctx.font="bold 16px Segoe UI";
+    } else if(m.state==="Reverse bias" && m.breakdown){
+      ctx.strokeStyle="#b13b3b";ctx.fillStyle="#b13b3b";ctx.lineWidth=7;
+      ctx.beginPath();ctx.moveTo(W-70,pathY);ctx.lineTo(70,pathY);ctx.stroke();
+      drawArrow(145,pathY,75,pathY,"#b13b3b",7);
+      drawArrow(220,pathY,150,pathY,"#b13b3b",7);
+      drawArrow(295,pathY,225,pathY,"#b13b3b",7);
+      ctx.font="bold 15px Segoe UI";
+    } else if(m.state==="Reverse bias" && showLeakage.checked && m.reverseCurrent>0){
+      ctx.strokeStyle="#b87818";ctx.fillStyle="#b87818";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(W-70,pathY);ctx.lineTo(70,pathY);ctx.stroke();
+      drawArrow(110,pathY,72,pathY,"#b87818",2);
+      ctx.font="bold 12px Segoe UI";
+    }
+
+    drawPotentialProfile(m);
+    drawIVGraph(m);
+}
+
+  function updateExternalBanner(m) {
+    const banner = document.getElementById("externalStatusBanner");
+    if (!banner) return;
+    if (m.state === "Forward bias") {
+      banner.textContent = "● Status: FORWARD BIAS — minority carriers remain small and do NOT cross; majority carriers approach/cross.";
+    } else if (m.state === "Reverse bias") {
+      banner.textContent = "● Status: REVERSE BIAS — majority carriers are blocked; minority carriers cross due to electric field.";
+    } else {
+      banner.textContent = "● Status: EQUILIBRIUM — minority carriers may cross, but opposite processes cancel → NO NET CURRENT.";
+    }
+  }
+
+  function updatePresetButtons() {
+    const V = Number(bias.value);
+    const V0 = baseBarrier();
+    [equilibriumBtn, forwardBtn, reverseBtn].forEach(b => b.classList.remove("selected"));
+
+    if (Math.abs(V) < 0.005) {
+      equilibriumBtn.classList.add("selected");
+    } else if (V > 0) {
+      forwardBtn.classList.add("selected");
+    } else {
+      reverseBtn.classList.add("selected");
+    }
+  }
+
+  function labels() {
+    const m=model();
+    pdVal.textContent=pd.value;
+    ndVal.textContent=nd.value;
+    biasVal.textContent=(+bias.value).toFixed(2)+" V";
+    tempVal.textContent=temp.value+" K";
+    speedVal.textContent=(+speed.value).toFixed(2)+"×";
+    densityVal.textContent=density.value==="1"?"Low":density.value==="2"?"Medium":"High";
+    stateEl.textContent=m.state;
+    widthEl.textContent=Math.round(m.W)+" a.u.";
+    barrierEl.textContent=m.barrier.toFixed(2)+" V";
+
+    const box = document.getElementById("biasModeBox");
+    if (box) {
+      if (m.state === "Reverse bias") {
+        box.textContent = "REVERSE BIAS — p is negative, n is positive";
+        box.style.background = "#fff4e5";
+        box.style.borderColor = "#e4c58a";
+        box.style.color = "#8b5a10";
+      } else if (m.state === "Forward bias") {
+        box.textContent = "FORWARD BIAS — p is positive, n is negative";
+        box.style.background = "#e9f7ef";
+        box.style.borderColor = "#a8d8bd";
+        box.style.color = "#206b4b";
+      } else {
+        box.textContent = "EQUILIBRIUM — no external bias";
+        box.style.background = "#eef5fb";
+        box.style.borderColor = "#cdddea";
+        box.style.color = "#17324d";
+      }
+    }
+    forwardCurrentEl.textContent=m.forwardCurrent===0 ? "0" : m.forwardCurrent.toFixed(1);
+    reverseCurrentEl.textContent=m.reverseCurrent===0 ? "0" : m.reverseCurrent.toFixed(3);
+    if(m.forwardCurrent>0) currentStatusEl.textContent="Forward flow";
+    else if(m.breakdown) currentStatusEl.textContent="Breakdown — large reverse current";
+    else if(m.reverseCurrent>0) currentStatusEl.textContent="Tiny leakage";
+    else currentStatusEl.textContent="No appreciable current";
+
+    updatePresetButtons();
+    updateExternalBanner(m);
+  }
+
+  function setMode(mode){
+    const V0=baseBarrier();
+    if(mode==="equilibrium") bias.value=0;
+    if(mode==="forward") bias.value=Math.min(1.2,V0+0.25).toFixed(2);
+    if(mode==="reverse") bias.value=(-Math.min(1.2,V0+0.50)).toFixed(2);
+    labels();
+  }
+
+  bias.addEventListener("input", ()=>{
+    labels();
+  });
+
+  [pd,nd,bias,temp,speed,density,material,showField,showBarrier,showMinority,showLeakage].forEach(el=>{
+    el.addEventListener("input",()=>{ labels(); });
+    el.addEventListener("change",()=>{ resetParticles(); labels(); });
+  });
+
+  equilibriumBtn.addEventListener("click",()=>setMode("equilibrium"));
+  forwardBtn.addEventListener("click",()=>setMode("forward"));
+  reverseBtn.addEventListener("click",()=>setMode("reverse"));
+
+  pauseBtn.addEventListener("click",()=>{
+    running=!running;
+    pauseBtn.textContent=running?"Pause simulation":"Resume simulation";
+  });
+
+  resetBtn.addEventListener("click",()=>{
+    bias.value=0; pd.value=5; nd.value=5; temp.value=300; speed.value=2; density.value=3;
+    showLeakage.checked=false;
+    showMinority.checked=true;
+    running=true;
+    lastTime=performance.now();
+    pauseBtn.textContent="Pause simulation";
+    setMode("equilibrium");
+    resetParticles();
+    labels();
+  });
+
+  resize();
+  resetParticles();
+  labels();
+
+  requestAnimationFrame(function frame(t){
+    const dt=lastTime ? Math.min(2,(t-lastTime)/16.67) : 1;
+    lastTime=t;
+    update(dt);
+    draw();
+    labels();
+    const st=document.getElementById("animStatus"); if(st) st.textContent=running ? "● Animation running" : "■ Animation paused";
+    requestAnimationFrame(frame);
+  });
+})();
+</script>
+</body>
+</html>
