@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doping Explorer — Grade 13 Physics Unit 9</title>
+<style>
+  :root{
+    --ink:#17324d; --muted:#5f7286; --line:#d7e1ea; --bg:#f5f8fb;
+    --blue:#1967c2; --red:#d94b5f; --green:#2e8a63; --gold:#b57615;
+    --panel:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Segoe UI,Arial,sans-serif}
+  header{background:linear-gradient(135deg,#173c66,#2a6fbb);color:#fff;padding:20px 0;position:relative}
+  .header-inner{max-width:1300px;margin:0 auto;padding:0 16px;position:relative}
+  .credit-corner{position:absolute;top:2px;right:16px;font-size:11px;opacity:0.85;font-style:italic}
+  header h1{margin:0;font-size:28px}
+  header p{margin:5px 0 0;opacity:.93}
+  .wrap{max-width:1300px;margin:18px auto;padding:0 16px}
+  .grid{display:grid;grid-template-columns:330px 1fr;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 7px 22px rgba(25,55,90,.07)}
+  .controls{padding:18px}
+  h2{font-size:19px;margin:0 0 12px}
+  label{display:block;font-weight:700;margin-top:14px}
+  select,input[type=range]{width:100%}
+  select,button{margin-top:6px;padding:9px 10px;border:1px solid #cbd6e2;border-radius:8px;background:#fff;color:var(--ink);font-size:14px}
+  button{width:100%;font-weight:700;cursor:pointer}
+  .primary{background:#2a6fbb;color:#fff;border-color:#2a6fbb}
+  .value{float:right;color:#2a6fbb}
+  .tip{margin-top:14px;padding:11px 12px;border-left:4px solid var(--gold);background:#fff9ec;font-size:13px;line-height:1.45}
+  .sim{padding:12px}
+  canvas{display:block;width:100%;height:470px;border:1px solid var(--line);border-radius:10px;background:#fbfdff}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-top:12px}
+  .stat{padding:10px;border:1px solid var(--line);border-radius:10px;background:#fcfdff}
+  .k{font-size:11px;color:var(--muted)} .v{font-size:18px;font-weight:800;margin-top:3px}
+  .bar{height:12px;background:#eaf0f5;border-radius:20px;overflow:hidden;margin-top:7px}
+  .fill{height:100%;width:0;background:#2a6fbb}
+  .insight{padding:18px;margin-top:16px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fcfdff}
+  .card h3{font-size:14px;margin:0 0 7px}
+  .card p{margin:0;font-size:13px;line-height:1.45;color:#43596c}
+  .table{margin-top:14px;border-collapse:collapse;width:100%;font-size:13px}
+  .table th,.table td{border:1px solid var(--line);padding:7px}
+  .table th{background:#f0f5f9;text-align:left}
+  .footer{margin-top:14px;color:var(--muted);font-size:12px;line-height:1.5}
+  @media(max-width:950px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}canvas{height:430px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="credit-corner">Prepared by Buddhike Priyadarshana</div>
+    <h1>Doping Explorer</h1>
+    <p>Explore how adding a small impurity changes a pure semiconductor into an n-type or p-type semiconductor.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <section class="panel controls">
+      <h2>Experiment controls</h2>
+
+      <label>Doping type
+        <select id="type">
+          <option value="intrinsic">Intrinsic (no doping)</option>
+          <option value="n">n-type — donor doping</option>
+          <option value="p">p-type — acceptor doping</option>
+        </select>
+      </label>
+
+      <label>Impurity element
+        <select id="impurity">
+          <option value="As">Arsenic (As) — Group V</option>
+          <option value="P">Phosphorus (P) — Group V</option>
+          <option value="Sb">Antimony (Sb) — Group V</option>
+          <option value="Bi">Bismuth (Bi) — Group V</option>
+          <option value="B">Boron (B) — Group III</option>
+          <option value="Al">Aluminium (Al) — Group III</option>
+          <option value="Ga">Gallium (Ga) — Group III</option>
+          <option value="In">Indium (In) — Group III</option>
+        </select>
+      </label>
+
+      <label>Doping concentration <span class="value" id="dopVal">5%</span>
+        <input id="dop" type="range" min="0" max="25" value="5" step="1">
+      </label>
+
+      <label>Temperature <span class="value" id="tempVal">300 K</span>
+        <input id="temp" type="range" min="200" max="500" value="300" step="1">
+      </label>
+
+      <label>Crystal size <span class="value" id="sizeVal">48 sites</span>
+        <input id="size" type="range" min="24" max="80" value="48" step="8">
+      </label>
+
+      <label>Animation speed <span class="value" id="speedVal">1.0×</span>
+        <input id="speed" type="range" min="0.25" max="3" value="1" step="0.25">
+      </label>
+
+      <button class="primary" id="pause">Pause</button>
+      <button id="reset">Reset</button>
+
+      <div class="tip">
+        <b>Try this:</b> select n-type, raise the doping level, and watch the number of free
+        electrons increase while holes remain the minority carriers. Then repeat with p-type.
+      </div>
+    </section>
+
+    <section class="panel sim">
+      <canvas id="canvas"></canvas>
+      <div class="stats">
+        <div class="stat"><div class="k">Majority carriers</div><div class="v" id="maj">0</div></div>
+        <div class="stat"><div class="k">Minority carriers</div><div class="v" id="min">0</div></div>
+        <div class="stat"><div class="k">Donor / acceptor ions</div><div class="v" id="ions">0</div></div>
+        <div class="stat"><div class="k">Carrier ratio</div><div class="v" id="ratio">1 : 1</div></div>
+        <div class="stat"><div class="k">Relative conductivity</div><div class="v" id="cond">1×</div><div class="bar"><div class="fill" id="condBar"></div></div></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel insight">
+    <h2>What the simulation is illustrating</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>n-type</h3>
+        <p>Group V atoms contribute an extra electron that does not participate in the four covalent bonds. These are donor atoms; electrons are the majority carriers and holes are the minority carriers.</p>
+      </div>
+      <div class="card">
+        <h3>p-type</h3>
+        <p>Group III atoms leave one bond short of an electron. The vacancy is represented as a hole. These are acceptor atoms; holes are the majority carriers and electrons are the minority carriers.</p>
+      </div>
+      <div class="card">
+        <h3>Electrical neutrality</h3>
+        <p>The crystal remains electrically neutral overall. Doping increases mobile carrier concentration without making the entire crystal carry a net charge.</p>
+      </div>
+      <div class="card">
+        <h3>More doping</h3>
+        <p>Under normal doping conditions, the majority-carrier concentration becomes much greater than the intrinsic carrier concentration, so conductivity rises and resistivity falls.</p>
+      </div>
+      <div class="card">
+        <h3>Temperature</h3>
+        <p>Heating creates additional electron–hole pairs by thermal agitation. In an extrinsic semiconductor this strongly affects the minority carriers, while the dopant-created majority carriers dominate under normal conditions.</p>
+      </div>
+      <div class="card">
+        <h3>Not a microscopic calculation</h3>
+        <p>The counts and motion are a visual teaching model. They are designed to show relationships described in the textbook, not to reproduce a real crystal atom-for-atom.</p>
+      </div>
+    </div>
+
+    <table class="table">
+      <tr><th>Condition</th><th>Majority carrier</th><th>Minority carrier</th><th>Impurity role</th></tr>
+      <tr><td>Intrinsic</td><td>Electrons = holes</td><td>Neither</td><td>No impurity</td></tr>
+      <tr><td>n-type</td><td>Free electrons</td><td>Holes</td><td>Donor (Group V)</td></tr>
+      <tr><td>p-type</td><td>Holes</td><td>Free electrons</td><td>Acceptor (Group III)</td></tr>
+    </table>
+
+    <div class="footer">
+      Based on Grade 13 Physics Unit 09, Chapter 1: extrinsic semiconductors and doping.
+      The book states that n-type semiconductors have electrons as majority carriers and holes as minority carriers,
+      while p-type semiconductors have holes as majority carriers and electrons as minority carriers. It also states
+      that increasing doping increases conductivity (and decreases resistivity).
+    </div>
+  </section>
+</div>
+
+<script>
+const c = document.getElementById('canvas'), ctx = c.getContext('2d');
+const type = document.getElementById('type'), impurity = document.getElementById('impurity');
+const dop = document.getElementById('dop'), temp = document.getElementById('temp'), size = document.getElementById('size'), speed = document.getElementById('speed');
+const dopVal = document.getElementById('dopVal'), tempVal = document.getElementById('tempVal'), sizeVal = document.getElementById('sizeVal'), speedVal = document.getElementById('speedVal');
+const maj = document.getElementById('maj'), min = document.getElementById('min'), ions = document.getElementById('ions'), ratio = document.getElementById('ratio'), cond = document.getElementById('cond'), condBar = document.getElementById('condBar');
+const pauseBtn = document.getElementById('pause'), resetBtn = document.getElementById('reset');
+
+let paused=false, last=performance.now(), sites=[], particles=[], cols=8, rows=6;
+
+const groupV = ['As','P','Sb','Bi'];
+const groupIII = ['B','Al','Ga','In'];
+
+function resize(){
+  const dpr=devicePixelRatio||1, r=c.getBoundingClientRect();
+  c.width=Math.round(r.width*dpr); c.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  build();
+}
+addEventListener('resize',resize);
+
+function build(){
+  const n=+size.value;
+  cols=Math.max(6,Math.round(Math.sqrt(n*1.45)));
+  rows=Math.max(4,Math.round(n/cols));
+  sites=[]; particles=[];
+  const W=c.clientWidth,H=c.clientHeight,left=60,top=70,right=W-60,bottom=H-50;
+  const dx=(right-left)/(cols-1),dy=(bottom-top)/(rows-1);
+  for(let r=0;r<rows;r++) for(let col=0;col<cols;col++) sites.push({x:left+col*dx,y:top+r*dy, impurity:false, broken:false});
+}
+
+function materializeImpurities(){
+  const mode=type.value;
+  const frac=(+dop.value)/100;
+  sites.forEach(s=>s.impurity=false);
+  if(mode==='intrinsic') return;
+  const count=Math.round(sites.length*frac);
+  const idx=[...sites.keys()].sort(()=>Math.random()-0.5).slice(0,count);
+  idx.forEach(i=>sites[i].impurity=true);
+}
+
+function thermalLevel(){
+  return Math.max(.04,Math.min(.85,Math.exp((+temp.value-300)/85)*.09));
+}
+
+function deriveCounts(){
+  const N=sites.length;
+  const d=+dop.value;
+  const T=+temp.value;
+  const baseIntrinsic=Math.max(1,Math.round(1 + 7*(T-200)/300)); // visual thermal pairs
+  if(type.value==='intrinsic') return {major:baseIntrinsic, minor:baseIntrinsic, ions:0};
+  const dopant=Math.max(1,Math.round(N*d/25));
+  const thermal=Math.max(1,baseIntrinsic);
+  if(type.value==='n') return {major:Math.max(1,dopant+thermal), minor:thermal, ions:dopant};
+  return {major:Math.max(1,dopant+thermal), minor:thermal, ions:dopant};
+}
+
+function syncImpuritySelect(){
+  const n=type.value==='n';
+  [...impurity.options].forEach(o=>o.style.display=(type.value==='intrinsic')?'none':(n?groupV.includes(o.value):groupIII.includes(o.value))?'block':'none');
+  if(type.value==='n' && !groupV.includes(impurity.value)) impurity.value='As';
+  if(type.value==='p' && !groupIII.includes(impurity.value)) impurity.value='In';
+}
+
+function respawnParticles(){
+  materializeImpurities();
+  particles=[];
+  const q=deriveCounts();
+  const W=c.clientWidth,H=c.clientHeight;
+  const targets=[...sites].filter(s=>s.impurity);
+  for(let i=0;i<q.ions;i++){
+    const s=targets[i%Math.max(1,targets.length)]||sites[i%sites.length];
+    particles.push({type:'ion',x:s.x,y:s.y,vx:0,vy:0,life:0});
+  }
+  const mode=type.value;
+  const active=Math.min(70,q.major+q.minor);
+  for(let i=0;i<active;i++){
+    let tp;
+    if(mode==='n') tp=(i<q.major?'e':'h');
+    else if(mode==='p') tp=(i<q.major?'h':'e');
+    else tp=(i%2===0?'e':'h');
+    particles.push({type:tp,x:70+Math.random()*(W-140),y:110+Math.random()*(H-170),vx:(Math.random()-.5)*.08,vy:(Math.random()-.5)*.08,life:0});
+  }
+}
+
+function update(dt){
+  if(paused)return;
+  const s=+speed.value,T=+temp.value;
+  for(const p of particles){
+    if(p.type==='ion') continue;
+    p.life+=dt;
+    const thermal=.00018*(T/300);
+    p.vx+=(Math.random()-.5)*thermal*dt;
+    p.vy+=(Math.random()-.5)*thermal*dt;
+    p.x+=p.vx*dt*s; p.y+=p.vy*dt*s;
+    if(p.x<30||p.x>c.clientWidth-30)p.vx*=-1;
+    if(p.y<30||p.y>c.clientHeight-30)p.vy*=-1;
+  }
+}
+
+function draw(){
+  const W=c.clientWidth,H=c.clientHeight;
+  ctx.clearRect(0,0,W,H);
+  const left=60,top=70,dx=(W-120)/(cols-1),dy=(H-120)/(rows-1);
+  ctx.font='12px Segoe UI';ctx.fillStyle='#5f7286';
+  ctx.fillText('Silicon crystal lattice — schematic teaching model',18,24);
+
+  // bond network
+  for(let r=0;r<rows;r++)for(let col=0;col<cols;col++){
+    const i=r*cols+col,s=sites[i],x=s.x,y=s.y;
+    if(col<cols-1){
+      ctx.strokeStyle='#aab9c7';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y);ctx.stroke();
+    }
+    if(r<rows-1){
+      ctx.strokeStyle='#c1ced9';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+dy);ctx.stroke();
+    }
+  }
+
+  // lattice atoms
+  for(const s of sites){
+    ctx.fillStyle='#e8eef3';ctx.strokeStyle='#9eb1c2';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.arc(s.x,s.y,8,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(s.impurity){
+      const isDonor=type.value==='n';
+      ctx.fillStyle=isDonor?'#2d8a63':'#d94b5f';
+      ctx.beginPath();ctx.arc(s.x,s.y,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 9px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(impurity.value,s.x,s.y+0.5);ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    }
+  }
+
+  // particles
+  for(const p of particles){
+    if(p.type==='ion'){
+      ctx.fillStyle=type.value==='n'?'#2d8a63':'#d94b5f';
+      ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
+      continue;
+    }
+    if(p.type==='e'){
+      ctx.fillStyle='#1967c2';ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 12px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('−',p.x,p.y);
+    }else{
+      ctx.fillStyle='#d94b5f';ctx.beginPath();ctx.arc(p.x,p.y,8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 13px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('+',p.x,p.y);
+    }
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  }
+
+  // labels
+  let title='Intrinsic semiconductor';
+  let sub='electron concentration = hole concentration';
+  if(type.value==='n'){title='n-type semiconductor';sub='electrons = majority • holes = minority';}
+  if(type.value==='p'){title='p-type semiconductor';sub='holes = majority • electrons = minority';}
+  ctx.fillStyle='#17324d';ctx.font='700 16px Segoe UI';ctx.fillText(title,18,48);
+  ctx.fillStyle='#5f7286';ctx.font='12px Segoe UI';ctx.fillText(sub,170,48);
+
+  // arrows around one impurity
+  if(type.value!=='intrinsic'){
+    const s=sites.find(x=>x.impurity);
+    if(s){
+      ctx.strokeStyle=type.value==='n'?'#2d8a63':'#d94b5f';ctx.lineWidth=2;
+      if(type.value==='n'){
+        ctx.fillStyle='#2d8a63';ctx.font='700 12px Segoe UI';ctx.fillText('donor',s.x+14,s.y-15);
+        ctx.fillText('extra electron',s.x+14,s.y+1);
+      }else{
+        ctx.fillStyle='#d94b5f';ctx.font='700 12px Segoe UI';ctx.fillText('acceptor',s.x+14,s.y-15);
+        ctx.fillText('hole',s.x+14,s.y+1);
+      }
+    }
+  }
+}
+
+function labels(){
+  dopVal.textContent=`${dop.value}%`;
+  tempVal.textContent=`${temp.value} K`;
+  sizeVal.textContent=`${size.value} sites`;
+  speedVal.textContent=`${(+speed.value).toFixed(2)}×`;
+  syncImpuritySelect();
+  const q=deriveCounts();
+  maj.textContent=q.major;
+  min.textContent=q.minor;
+  ions.textContent=q.ions;
+  ratio.textContent=`${q.major} : ${q.minor}`;
+  const cnd=type.value==='intrinsic'?1:Math.max(1,1+(+dop.value)*1.8);
+  cond.textContent=`${cnd.toFixed(1)}×`;
+  condBar.style.width=`${Math.min(100,cnd/12*100)}%`;
+}
+
+function resetSim(){build();respawnParticles();labels();}
+[type,dop,temp,size,speed,impurity].forEach(el=>el.addEventListener('input',()=>{if(el===type||el===dop||el===impurity)respawnParticles();labels();}));
+pauseBtn.onclick=()=>{paused=!paused;pauseBtn.textContent=paused?'Resume':'Pause'};
+resetBtn.onclick=resetSim;
+
+function loop(now){
+  const dt=Math.min(40,now-last);last=now;update(dt);draw();labels();requestAnimationFrame(loop);
+}
+resize();resetSim();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
