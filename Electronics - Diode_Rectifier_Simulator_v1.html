@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -296,7 +297,7 @@ function drawHalf(out, diodeOn){
   }
   if(document.getElementById('labels').checked){
     ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';ctx.fillText('Rₘ',rx+14,cy+52);
-    ctx.fillText('Vout across Load',rx-22,cy+125);
+  ctx.fillStyle='#dbe4ec';ctx.font='12px Arial';ctx.textAlign='left';ctx.fillText('Vout across Load',rx+45,cy+4);
   }
   return [{x:d1,y:cy,x2:d2,y2:cy,on:diodeOn}];
 }
@@ -533,18 +534,73 @@ function drawCircuit(inp,out){
 function drawWave(inp,out){
   const W=w.clientWidth,H=w.clientHeight;
   wx.clearRect(0,0,W,H);
-  wx.strokeStyle='#526270';wx.lineWidth=1;
-  wx.beginPath();wx.moveTo(40,H/2);wx.lineTo(W-10,H/2);wx.moveTo(40,15);wx.lineTo(40,H-25);wx.stroke();
-  wx.fillStyle='#dbe4ec';wx.font='12px Arial';wx.fillText('+V',8,22);wx.fillText('0',21,H/2+4);wx.fillText('−V',8,H-28);
-  const scaleY=(H*.39)/Math.max(Vin,1);
+
+  // CRO voltage scale: fixed ±20 V so changing Vin changes the
+  // displayed amplitude rather than changing the Y-axis automatically.
+  const yTop=15, yBottom=H-25, yMid=H/2;
+  const maxV=20;
+  const scaleY=((H-40)/2)/maxV;
+
+  // CRO time scale: adapt to frequency so several cycles remain visible
+  // even at very low frequencies. About 3 input cycles are shown.
+  // Increasing frequency therefore compresses the waves horizontally,
+  // while the displayed time range updates to remain easy to read.
+  const cyclesShown=3;
+  const timeWindow=Math.max(cyclesShown/Math.max(freq,0.001),0.001);
+  const timeWindowMs=timeWindow*1000;
+
+  // Horizontal voltage divisions.
+  wx.strokeStyle='#2d3b47';wx.lineWidth=1;
+  for(let v=-20;v<=20;v+=5){
+    const y=yMid-v*scaleY;
+    wx.beginPath();wx.moveTo(40,y);wx.lineTo(W-10,y);wx.stroke();
+  }
+
+  // Vertical time divisions: 8 equal divisions across the adaptive
+  // time window.
+  const xDivisions=8;
+  for(let i=0;i<=xDivisions;i++){
+    const x=40+(W-50)*(i/xDivisions);
+    wx.beginPath();wx.moveTo(x,yTop);wx.lineTo(x,yBottom);wx.stroke();
+  }
+
+  // Axes.
+  wx.strokeStyle='#526270';wx.lineWidth=1.2;
+  wx.beginPath();
+  wx.moveTo(40,yMid);wx.lineTo(W-10,yMid);
+  wx.moveTo(40,yTop);wx.lineTo(40,yBottom);
+  wx.stroke();
+
+  // Numeric Y-axis scale in volts.
+  wx.fillStyle='#dbe4ec';wx.font='11px Arial';wx.textAlign='right';
+  for(let v=-20;v<=20;v+=5){
+    const y=yMid-v*scaleY;
+    wx.fillText((v>0?'+':'')+v+' V',36,y+4);
+  }
+
+  // Numeric X-axis scale in milliseconds.
+  wx.textAlign='center';
+  for(let i=0;i<=xDivisions;i++){
+    const x=40+(W-50)*(i/xDivisions);
+    const ms=(timeWindowMs*i/xDivisions);
+    const label=ms>=1000 ? (ms/1000).toFixed(2)+' s' : ms.toFixed(ms<10?1:0)+' ms';
+    wx.fillText(label,x,H-8);
+  }
+  wx.textAlign='left';
+
   function trace(fn,style){
     wx.strokeStyle=style;wx.lineWidth=2;wx.beginPath();
     for(let x=40;x<W-10;x++){
-      const ph=t*2*Math.PI*freq/60 + (x-40)/(W-50)*Math.PI*4;
-      const y=H/2-fn(ph)*scaleY;
+      // Horizontal position represents a fixed amount of time.
+      // Thus the number of cycles remains readable while the time scale changes.
+      const elapsedFromLeft=(x-40)/(W-50)*timeWindow;
+      const ph=t*2*Math.PI*freq/60 + 2*Math.PI*freq*elapsedFromLeft;
+      const y=yMid-fn(ph)*scaleY;
       x===40?wx.moveTo(x,y):wx.lineTo(x,y);
-    }wx.stroke();
+    }
+    wx.stroke();
   }
+
   if(document.getElementById('showInputWave').checked){
     trace(p=>Vin*Math.sin(p),'#77bdfb');
   }
@@ -565,18 +621,12 @@ function drawWave(inp,out){
     const cycle=mode==='half'?2*Math.PI:Math.PI;
 
     // Vout is the envelope of the rectified source and the capacitor's
-    // natural discharge from the previous peak. The output follows the
-    // rectified waveform while it is above the discharge curve. Once the
-    // rectified waveform falls below that curve, the diode turns OFF and
-    // Vout follows the exponential capacitor discharge.
+    // natural discharge from the previous peak.
     trace(p=>{
       if(peak<=0) return 0;
       let theta=((p%cycle)+cycle)%cycle;
-      const vSource=mode==='half'
-        ? Math.max(0,Vin*Math.sin(theta)-drop)
-        : Math.max(0,Vin*Math.sin(theta)-drop);
+      const vSource=Math.max(0,Vin*Math.sin(theta)-drop);
 
-      // Time since the most recent rectified peak.
       const elapsedPhase=theta>=Math.PI/2
         ? theta-Math.PI/2
         : cycle-Math.PI/2+theta;
@@ -597,7 +647,6 @@ function drawWave(inp,out){
     wx.fillStyle='#b7e4c7';wx.fillText('Smoothed (C)',W-95,ly);
   }
 }
-
 function physics(inp,out){
   const positive=inp>=0;
   const drop = mode==='bridge' ? 2*Vf : Vf;
