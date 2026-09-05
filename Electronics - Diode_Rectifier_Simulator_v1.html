@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AL Physics — Diode Rectifier Simulator</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef2f6;color:#17202a}
+  .app{max-width:1450px;margin:auto;padding:14px}
+  header{background:#17324d;color:white;border-radius:14px;padding:14px 18px;margin-bottom:12px}
+  header h1{margin:0 0 4px;font-size:25px}
+  header p{margin:0;color:#dce8f2;font-size:14px}
+  .layout{display:grid;grid-template-columns:330px 1fr;gap:12px}
+  .panel,.card{background:white;border-radius:12px;border:1px solid #d5dde5;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .controls{padding:15px}
+  .controls h2,.card h2{font-size:17px;margin:0 0 12px}
+  label{display:block;font-size:13px;font-weight:bold;margin:13px 0 5px}
+  select,input[type=range]{width:100%}
+  select{padding:8px;border:1px solid #b9c5d0;border-radius:7px;background:white}
+  .row{display:flex;gap:8px;align-items:center}
+  .row input{flex:1}
+  .value{width:58px;text-align:right;font-family:monospace;font-size:13px}
+  .checks{margin-top:13px}
+  .checks label{font-weight:normal;margin:8px 0}
+  button{border:0;border-radius:8px;padding:9px 12px;cursor:pointer;background:#17324d;color:white;font-weight:bold}
+  button.secondary{background:#e4eaf0;color:#17324d}
+  .buttons{display:flex;gap:7px;margin-top:14px}
+  .buttons button{flex:1}
+  .legend{font-size:12px;line-height:1.5;margin-top:13px;padding:10px;background:#f4f7fa;border-radius:8px}
+  .main{display:grid;gap:12px}
+  .card{padding:12px}
+  #circuit{width:100%;height:390px;border:1px solid #d5dde5;border-radius:9px;background:#fbfcfd}
+  #wave{width:100%;height:310px;border:1px solid #d5dde5;border-radius:9px;background:#101820}
+  .status{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .stat{background:#f4f7fa;border-radius:8px;padding:9px}
+  .stat .k{font-size:11px;color:#607080}
+  .stat .v{font-size:17px;font-weight:bold;margin-top:3px}
+  .explain{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .explainBox{background:#f4f7fa;border-radius:9px;padding:12px;min-height:112px}
+  .explainBox h3{margin:0 0 6px;font-size:14px}
+  .explainBox p{margin:0;font-size:13px;line-height:1.45}
+  .formula{font-family:Georgia,serif;font-size:14px;background:#fff8df;padding:9px;border-radius:7px;margin-top:8px}
+  .small{font-size:11px;color:#667}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.status{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style id="compact-layout">
+body{font-size:14px!important}.app{max-width:1500px;padding:8px!important}
+header{padding:9px 14px!important;margin-bottom:7px!important}
+header h1{font-size:20px!important;margin:0 0 2px!important} header p{font-size:11px!important}
+.layout{grid-template-columns:285px 1fr!important;gap:8px!important}
+.controls{padding:10px!important}.controls h2,.card h2{font-size:14px!important;margin:0 0 7px!important}
+label{font-size:11px!important;margin:8px 0 3px!important} select{padding:5px!important;font-size:11px!important}
+.checks{margin-top:8px!important}.checks label{margin:5px 0!important;font-size:11px!important}
+.legend{font-size:10px!important;padding:7px!important;margin-top:8px!important}
+.main{gap:8px!important}.card{padding:8px!important}
+#circuit{height:310px!important}#wave{height:245px!important}
+.status{gap:5px!important;margin-top:6px!important}.stat{padding:6px!important}.stat .k{font-size:9px!important}.stat .v{font-size:14px!important}
+.explain{gap:6px!important}.explainBox{padding:8px!important;min-height:80px!important}
+.explainBox h3{font-size:12px!important}.explainBox p{font-size:11px!important;line-height:1.3!important}
+.formula{font-size:12px!important;padding:6px!important}
+.scope-panel{margin:0 0 7px!important;padding:8px!important;border-radius:9px!important;background:#07110b;color:#d7ffe4}
+.scope-header{padding:0 0 5px!important}.scope-header h2{font-size:14px!important}.scope-header p{font-size:10px!important}
+.scope-readout{font-size:10px!important}.scope-wrap{padding:0!important}
+#oscilloscopeCanvas{width:100%!important;height:auto!important;max-height:280px!important}
+.scope-caption{padding:3px 4px 0!important;font-size:9px!important}.osc-section{padding:7px!important;margin:0 0 7px!important}
+.osc-section .control-grid{grid-template-columns:repeat(3,minmax(120px,1fr));gap:5px!important}
+.osc-section .control-grid label{font-size:10px!important;margin:0!important}
+.osc-section select{height:23px!important;min-height:23px!important;padding:2px 4px!important;font-size:10px!important}
+@media(max-width:900px){.layout{grid-template-columns:1fr!important}}
+</style></head>
+<body>
+<div class="app">
+<header>
+  <h1>Diode Rectifiers — AL Physics Interactive Simulator</h1>
+  <p>Interactive simulation aligned with GCE A/L Physics curriculum (Unit 9 Electronics): Bridge rectifier with correct D<sub>1</sub>, D<sub>4</sub> conduction on positive half-cycles and D<sub>2</sub>, D<sub>3</sub> conduction on negative half-cycles.</p>
+</header>
+
+<div class="layout">
+<aside class="panel controls">
+  <h2>Simulation controls</h2>
+
+  <label>Rectifier Type</label>
+  <select id="mode">
+    <option value="half">1. Half-wave rectifier</option>
+    <option value="center">2. Full-wave — centre-tapped</option>
+    <option value="bridge" selected>3. Full-wave — bridge</option>
+  </select>
+
+  <label>Input Peak Voltage (V<sub>m</sub>)</label>
+  <div class="row"><input id="vin" type="range" min="2" max="20" step=".5" value="12"><span class="value" id="vinV">12 V</span></div>
+
+  <label>AC Supply Frequency</label>
+  <div class="row"><input id="freq" type="range" min="1" max="100" step="1" value="50"><span class="value" id="freqV">50 Hz</span></div>
+
+  <label>Load Resistance (R<sub>L</sub>)</label>
+  <div class="row"><input id="load" type="range" min="100" max="5000" step="100" value="1000"><span class="value" id="loadV">1.0 kΩ</span></div>
+
+  <label>Diode Barrier/Knee Voltage (V<sub>F</sub>)</label>
+  <div class="row"><input id="vf" type="range" min="0" max="1" step=".05" value=".7"><span class="value" id="vfV">0.70 V</span></div>
+
+  <label>Animation Speed</label>
+  <div class="row"><input id="speed" type="range" min="0.001" max="2" step="0.001" value="0.25"><span class="value" id="speedV">0.25×</span></div>
+
+  <div class="checks">
+    <label style="display:none"><input id="current" type="checkbox"> Show conventional current</label>
+    <label style="display:none"><input id="electrons" type="checkbox"> Show electron movement</label>
+    <label><input id="labels" type="checkbox" checked> Show circuit labels</label>
+    <label><input id="filter" type="checkbox"> Add smoothing capacitor (C)</label>
+  </div>
+
+  <div class="checks" style="border-top:1px solid #d5dde5;padding-top:10px;margin-top:10px">
+    <b style="font-size:13px">Waveform display</b>
+    <label><input id="showInputWave" type="checkbox" checked> Show input AC waveform</label>
+    <label><input id="showRectWave" type="checkbox" checked> Show rectified output waveform</label>
+    <label><input id="showFilterWave" type="checkbox" checked> Show smoothed output waveform</label>
+  </div>
+
+  <div id="capControls" style="display:none">
+    <label>Smoothing Capacitance (C)</label>
+    <div class="row"><input id="cap" type="range" min="100" max="10000" step="100" value="1000"><span class="value" id="capV">1000 µF</span></div>
+    <div class="small" style="margin-top:4px;color:#556">Standard AL electrolytic range: 500 µF – 10000 µF</div>
+  </div>
+
+  <div class="buttons">
+    <button id="pause">Pause</button>
+    <button class="secondary" id="reset">Reset</button>
+  </div>
+
+  <div class="legend">
+    <b></b><br>
+    <span><br>
+    <span><br>
+    Active diode = forward biased beyond barrier (V<sub>F</sub>)<br>
+    Inactive diode = reverse biased / below barrier
+  </div>
+</aside>
+
+<main class="main">
+  <section class="card">
+    <h2>Rectifier circuit</h2>
+    <canvas id="circuit"></canvas>
+    <div class="status">
+      <div class="stat"><div class="k">INPUT VOLTAGE</div><div class="v" id="inputStatus">+0.00 V</div></div>
+      <div class="stat"><div class="k">DIODE STATE</div><div class="v" id="diodeStatus">OFF</div></div>
+      <div class="stat"><div class="k">LOAD CURRENT (I<sub>L</sub>)</div><div class="v" id="currentStatus">0.00 mA</div></div>
+      <div class="stat"><div class="k">OUTPUT VOLTAGE (V<sub>O</sub>)</div><div class="v" id="outputStatus">0.00 V</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Voltage waveforms (CRO View)</h2>
+    <canvas id="wave"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Curriculum Operation & Analysis</h2>
+    <div class="explain">
+      <div class="explainBox">
+        <h3 id="cycleTitle">Instantaneous operation</h3>
+        <p id="cycleText">Positive half-cycle: D₁ and D₃ conduct. Negative half-cycle: D₂ and D₄ conduct..</p>
+      </div>
+      <div class="explainBox">
+        <h3>Physics principles</h3>
+        <p id="physicsText">A p-n junction diode acts as a valve, conducting only when forward-biased beyond the knee voltage (V<sub>F</sub>).</p>
+        <div class="formula" id="formula">V<sub>out</sub> ≈ V<sub>in</sub> − 2V<sub>F</sub> during conduction</div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+</div>
+
+<script>
+const c=document.getElementById('circuit'), ctx=c.getContext('2d');
+const w=document.getElementById('wave'), wx=w.getContext('2d');
+
+let mode='bridge', Vin=12, freq=50, R=1000, Vf=.7, cap=1000, speed=.25;
+let running=true, t=0, last=performance.now(), smoothV=0, lastRawOut=0, halfDiodeOn=false, centerDiodeOn=false, bridgeDiodeOn=false, capHasPeak=false;
+
+document.getElementById('mode').value = 'bridge';
+
+function resize(){
+  const d=devicePixelRatio||1;
+  [c,w].forEach(x=>{
+    const r=x.getBoundingClientRect();
+    x.width=r.width*d;x.height=r.height*d;
+    x.getContext('2d').setTransform(d,0,0,d,0,0);
+  });
+}
+window.addEventListener('resize',resize); resize();
+
+function val(id){return +document.getElementById(id).value}
+function updateControls(){
+  Vin=val('vin');freq=val('freq');R=val('load');Vf=val('vf');cap=val('cap');speed=val('speed');
+  document.getElementById('vinV').textContent=Vin+' V';
+  document.getElementById('freqV').textContent=freq+' Hz';
+  document.getElementById('loadV').textContent=(R/1000).toFixed(1)+' kΩ';
+  document.getElementById('vfV').textContent=Vf.toFixed(2)+' V';
+  document.getElementById('speedV').textContent=speed.toFixed(2)+'×';
+  document.getElementById('capV').textContent=cap+' µF';
+  document.getElementById('capControls').style.display=document.getElementById('filter').checked?'block':'none';
+}
+['mode','vin','freq','load','vf','cap','speed','filter'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{mode=document.getElementById('mode').value;updateControls()});
+  document.getElementById(id).addEventListener('change',()=>{mode=document.getElementById('mode').value;updateControls()});
+});
+document.getElementById('pause').onclick=()=>{running=!running;document.getElementById('pause').textContent=running?'Pause':'Play'};
+document.getElementById('reset').onclick=()=>{t=0;smoothV=0;lastRawOut=0;halfDiodeOn=false;centerDiodeOn=false;bridgeDiodeOn=false;capHasPeak=false;last=performance.now();};
+
+function diodeOriented(x1, y1, x2, y2, on, label, angleDeg){
+  ctx.save();
+  ctx.strokeStyle='#1b2733'; ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  ctx.translate(mx,my); ctx.rotate(angleDeg * Math.PI/180);
+  ctx.fillStyle=on?'#f0a51a':'#d7dee5';
+  ctx.beginPath();ctx.moveTo(-13,-9);ctx.lineTo(7,0);ctx.lineTo(-13,9);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(7,-11);ctx.lineTo(7,11);ctx.stroke();
+  ctx.restore();
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';
+    ctx.fillText(label, mx-10, my-14);
+    ctx.fillStyle=on?'#b35b00':'#7b8792';ctx.font='10px Arial';
+    ctx.fillText(on?'ON':'OFF', mx-10, my+22);
+  }
+}
+
+function wire(points){
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2.5;ctx.beginPath();
+  ctx.moveTo(points[0][0],points[0][1]);
+  for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
+  ctx.stroke();
+}
+
+function resistorV(x,y1,y2){
+  const lead=18,a=y1+lead,b=y2-lead;
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,a);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,b);ctx.lineTo(x,y2);ctx.stroke();
+  const n=7,step=(b-a)/(n+1);
+  ctx.beginPath();ctx.moveTo(x,a);
+  for(let i=1;i<=n;i++)ctx.lineTo(x+(i%2?9:-9),a+i*step);
+  ctx.lineTo(x,b);ctx.stroke();
+}
+
+function sourceAC(x,y){
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2.2;
+  ctx.beginPath();ctx.arc(x,y,28,0,Math.PI*2);ctx.stroke();
+  ctx.font='bold 20px Georgia';ctx.fillStyle='#17202a';ctx.textAlign='center';
+  ctx.fillText('~',x,y+7);ctx.textAlign='left';
+  if(document.getElementById('labels').checked){
+    ctx.font='12px Arial';ctx.fillText('AC Source',x-32,y+47);
+  }
+}
+
+function ground(x,y){
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2;
+  for(let i=0;i<3;i++){
+    ctx.beginPath();ctx.moveTo(x-(18-i*6),y+i*5);ctx.lineTo(x+(18-i*6),y+i*5);ctx.stroke();
+  }
+}
+
+function node(x,y){
+  ctx.fillStyle='#17202a';ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();
+}
+
+function drawHalf(out, diodeOn){
+  const W=c.clientWidth,H=c.clientHeight,cy=H*.50;
+  const sx=W*.16, d1=W*.36, d2=W*.54, rx=W*.73;
+  sourceAC(sx,cy);
+  wire([[sx+28,cy],[d1,cy]]);
+  diodeOriented(d1,cy,d2,cy,diodeOn,'D', 0);
+  wire([[d2,cy],[rx,cy]]);
+  resistorV(rx,cy,cy+100);
+  wire([[rx,cy+100],[sx,cy+100],[sx,cy+28]]);
+  ground(rx,cy+100);
+  node(d1,cy);node(d2,cy);
+  if(document.getElementById('filter').checked){
+    const cx=rx-42;
+    ctx.strokeStyle='#17202a';ctx.lineWidth=2;
+    // Capacitor is directly across R_L: its upper terminal is on the
+    // positive output wire and its lower terminal is on the return wire.
+    wire([[d2,cy],[cx,cy]]);
+    wire([[cx,cy],[cx,cy+40]]);
+    ctx.beginPath();
+    ctx.moveTo(cx-12,cy+40);ctx.lineTo(cx+12,cy+40);
+    ctx.moveTo(cx-12,cy+46);ctx.lineTo(cx+12,cy+46);
+    ctx.stroke();
+    wire([[cx,cy+46],[cx,cy+100]]);
+    wire([[cx,cy+100],[rx,cy+100]]);
+    if(document.getElementById('labels').checked){
+      ctx.fillStyle='#17202a';ctx.font='bold 11px Arial';ctx.fillText('+ C',cx-14,cy+30);
+    }
+  }
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';ctx.fillText('Rₘ',rx+14,cy+52);
+    ctx.fillText('Vout across Load',rx-22,cy+125);
+  }
+  return [{x:d1,y:cy,x2:d2,y2:cy,on:diodeOn}];
+}
+
+function drawCenter(inp, diodeOn){
+  const W=c.clientWidth,H=c.clientHeight;
+
+  // Centre-tapped full-wave rectifier, following the reference circuit:
+  // secondary top = C, centre tap = E (0 V), secondary bottom = D.
+  // C -> D1 -> X and D -> D2 -> X, with RL connected from X to E.
+  const xP=W*.18, xSec=W*.40, xDiode=W*.49, xOut=W*.70;
+  const yC=H*.30, yE=H*.50, yD=H*.70;
+  const xLoad=W*.84;
+  const dLen=105;
+  const positive=inp>=0;
+  // The animation must follow the actual capacitor-aware diode state
+  // calculated in frame(). During capacitor discharge diodeOn is false,
+  // so both D₁ and D₂ are visibly OFF.
+  const d1On=positive && diodeOn;
+  const d2On=!positive && diodeOn;
+
+  // Primary side and AC source.
+  sourceAC(xP,H*.50);
+  wire([[xP+28,H*.50],[xP+48,H*.50],[xP+48,yC],[xSec-18,yC]]);
+  wire([[xP+48,H*.50],[xP+48,yD],[xSec-18,yD]]);
+
+  // Transformer coils (primary and centre-tapped secondary).
+  ctx.strokeStyle='#17202a';ctx.lineWidth=2.2;
+  function coil(x,y1,y2,bulges){
+    const lead=10, top=y1+lead, bot=y2-lead;
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,top);
+    const step=(bot-top)/(bulges*2);
+    for(let i=0;i<bulges*2;i++){
+      const yy=top+(i+1)*step;
+      const dir=(i%2===0)?-1:1;
+      ctx.quadraticCurveTo(x+dir*12, yy-step/2, x, yy);
+    }
+    ctx.lineTo(x,y2);ctx.stroke();
+  }
+
+  coil(xSec,yC,yD,6);
+  coil(xSec-28,yC,yD,6);
+
+  // Primary-side transformer connection labels.
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';
+    ctx.fillText('A',xSec-58,yC+2);
+    ctx.fillText('B',xSec-58,yD+2);
+  }
+
+  // Secondary terminals C, E and D.
+  const secLead=xSec+14;
+  wire([[secLead,yC],[xDiode,yC]]);
+  wire([[secLead,yE],[xOut-42,yE]]);
+  wire([[secLead,yD],[xDiode,yD]]);
+
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17324d';ctx.font='bold 13px Arial';
+    ctx.fillText('C',secLead+3,yC-10);
+    ctx.fillText('E',secLead+3,yE-9);
+    ctx.fillText('D',secLead+3,yD+18);
+    ctx.fillStyle='#667482';ctx.font='10px Arial';
+    ctx.fillText('Vₑ = 0 V',secLead+20,yE+18);
+  }
+
+  // Diodes: both point from their half of the secondary toward common X.
+  diodeOriented(xDiode,yC,xDiode+dLen,yC,d1On,'D₁',0);
+  diodeOriented(xDiode,yD,xDiode+dLen,yD,d2On,'D₂',0);
+
+  // Common positive output node X and load return to centre tap E.
+  const diodeEnd=xDiode+dLen;
+  wire([[diodeEnd,yC],[xOut,yC],[xOut,yE]]);
+  wire([[diodeEnd,yD],[xOut,yD],[xOut,yE]]);
+  wire([[xOut,yC],[xLoad,yC]]);
+  resistorV(xLoad,yC,yE);
+  wire([[xLoad,yE],[secLead,yE]]);
+
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17324d';ctx.font='bold 13px Arial';
+    ctx.fillText('X',xOut+5,yC-12);
+    ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';
+    ctx.fillText('Rₗ',xLoad+14,(yC+yE)/2+4);
+    ctx.fillText('Vout',xLoad+30,(yC+yE)/2+4);
+    ctx.font='10px Arial';
+    ctx.fillText('centre-tapped secondary',xSec-20,yD+42);
+  }
+
+  // Smoothing capacitor in parallel with RL, from X to E.
+  if(document.getElementById('filter').checked){
+    const capX=xLoad-48;
+    const plateY1=yC+22;
+    const plateY2=yC+34;
+
+    wire([[capX,yC],[capX,plateY1]]);
+    wire([[capX,plateY2],[capX,yE]]);
+
+    ctx.strokeStyle='#17202a';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(capX-18,plateY1);ctx.lineTo(capX+18,plateY1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(capX-18,plateY2);ctx.lineTo(capX+18,plateY2);ctx.stroke();
+
+    if(document.getElementById('labels').checked){
+      ctx.fillStyle='#17202a';ctx.font='bold 13px Arial';
+      ctx.fillText('C',capX+24,plateY1+8);
+      ctx.fillText('+',capX+24,plateY1-3);
+      ctx.fillText('−',capX+24,plateY2+13);
+    }
+  }
+
+  // Centre tap is the return/reference point for the load.
+  node(secLead,yE);
+  node(xOut,yC);
+
+  const activePaths=[];
+  if(d1On){
+    activePaths.push({x:secLead,y:yC,x2:diodeEnd,y2:yC,on:true});
+    activePaths.push({x:diodeEnd,y:yC,x2:xLoad,y2:yC,on:true});
+    activePaths.push({x:xLoad,y:yE,x2:secLead,y2:yE,on:true});
+  }else if(d2On){
+    activePaths.push({x:secLead,y:yD,x2:diodeEnd,y2:yD,on:true});
+    activePaths.push({x:diodeEnd,y:yD,x2:xLoad,y2:yC,on:true});
+    activePaths.push({x:xLoad,y:yE,x2:secLead,y2:yE,on:true});
+  }
+  return activePaths;
+}
+
+function drawBridge(inp, bridgeOn){
+  const W=c.clientWidth,H=c.clientHeight;
+  const cx=W*.44, cy=H*.50, s=70;
+
+  // Bridge junctions:
+  // A = top, B = right/output, C = bottom/source negative, D = left/load negative.
+  const A=[cx,cy-s], B=[cx+s,cy], C=[cx,cy+s], D=[cx-s,cy];
+  const sx=W*.14, topRailY=A[1], bottomRailY=C[1];
+  const loadX=W*.89;
+
+  sourceAC(sx,cy);
+
+  // AC source is connected directly between A and C.
+  wire([[sx,cy-28],[sx,topRailY],[A[0],A[1]]]);
+  wire([[sx,cy+28],[sx,bottomRailY],[C[0],C[1]]]);
+
+  // CORRECT bridge conduction:
+  // Positive half-cycle: A -> D1 -> B -> RL -> D -> D3 -> C
+  // Negative half-cycle: C -> D2 -> B -> RL -> D -> D4 -> A
+  const positive = inp >= 0;
+  const d1On = positive && bridgeOn;
+  const d2On = !positive && bridgeOn;
+  const d3On = positive && bridgeOn;
+  const d4On = !positive && bridgeOn;
+
+  diodeOriented(A[0],A[1],B[0],B[1],d1On,'D₁',45);
+  diodeOriented(C[0],C[1],B[0],B[1],d2On,'D₂',-45);
+  diodeOriented(D[0],D[1],C[0],C[1],d3On,'D₃',45);
+  diodeOriented(D[0],D[1],A[0],A[1],d4On,'D₄',-45);
+
+  // Output: B is positive side of the load; D is negative side.
+  wire([[B[0],B[1]],[B[0]+45,B[1]],[B[0]+45,topRailY],[loadX,topRailY]]);
+  resistorV(loadX,topRailY,bottomRailY);
+  wire([[D[0],D[1]],[D[0],bottomRailY+42],[loadX,bottomRailY+42],[loadX,bottomRailY]]);
+  // Smoothing capacitor across R_L.
+  // IMPORTANT: both capacitor terminals are connected directly across the load:
+  // upper terminal -> B / positive output node
+  // lower terminal -> D / negative output node.
+  if(document.getElementById('filter').checked){
+    const capX=loadX-65;
+    const plateY1=cy-8;
+    const plateY2=cy+8;
+
+    // Continuous branches: upper capacitor terminal connects directly to
+    // the positive output rail; lower terminal connects directly to the
+    // negative output rail.
+    wire([[capX,topRailY],[capX,plateY1]]);
+    wire([[capX,plateY2],[capX,bottomRailY],[loadX,bottomRailY]]);
+
+    // Two parallel capacitor plates.
+    ctx.strokeStyle='#17202a';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(capX-18,plateY1);
+    ctx.lineTo(capX+18,plateY1);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(capX-18,plateY2);
+    ctx.lineTo(capX+18,plateY2);
+    ctx.stroke();
+
+    if(document.getElementById('labels').checked){
+      ctx.fillStyle='#17202a';
+      ctx.font='bold 14px Arial';
+      ctx.fillText('C',capX+25,cy+5);
+      ctx.fillText('+',capX+25,plateY1-5);
+      ctx.fillText('−',capX+25,plateY2+13);
+    }
+  }
+
+  // Junction dots and A-D labels.
+  [A,B,C,D].forEach(p=>node(p[0],p[1]));
+  if(document.getElementById('labels').checked){
+    ctx.fillStyle='#17324d';ctx.font='bold 14px Arial';
+    ctx.fillText('A',A[0]-7,A[1]-14);
+    ctx.fillText('B',B[0]+12,B[1]+5);
+    ctx.fillText('C',C[0]-7,C[1]+24);
+    ctx.fillText('D',D[0]-27,D[1]+5);
+    ctx.fillStyle='#17202a';ctx.font='bold 12px Arial';
+    ctx.fillText('+',loadX-24,topRailY+16);
+    ctx.fillText('−',loadX-24,bottomRailY-8);
+    ctx.fillText('Rₗ',loadX+14,cy+5);
+    ctx.fillText('Vout at Load',loadX+14,cy+22);
+  }
+
+  // Animated conventional-current paths.
+  const activePaths=[];
+  if(d1On && d3On){
+    activePaths.push({x:A[0],y:A[1],x2:B[0],y2:B[1],on:true});          // D1
+    activePaths.push({x:B[0],y:B[1],x2:loadX,y2:topRailY,on:true});      // B -> RL
+    activePaths.push({x:loadX,y:bottomRailY,x2:D[0],y2:D[1],on:true});   // RL -> D
+    activePaths.push({x:D[0],y:D[1],x2:C[0],y2:C[1],on:true});          // D3
+  } else if(d2On && d4On){
+    activePaths.push({x:C[0],y:C[1],x2:B[0],y2:B[1],on:true});          // D2
+    activePaths.push({x:B[0],y:B[1],x2:loadX,y2:topRailY,on:true});      // B -> RL
+    activePaths.push({x:loadX,y:bottomRailY,x2:D[0],y2:D[1],on:true});   // RL -> D
+    activePaths.push({x:D[0],y:D[1],x2:A[0],y2:A[1],on:true});          // D4
+  }
+  return activePaths;
+}
+function drawCircuit(inp,out){
+  ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+  ctx.fillStyle='#657482';ctx.font='12px Arial';
+  ctx.fillText('Instantaneous input: '+inp.toFixed(2)+' V',16,20);
+  let ds=mode==='half'?drawHalf(out,halfDiodeOn):mode==='center'?drawCenter(inp,centerDiodeOn):drawBridge(inp,bridgeDiodeOn);
+}
+
+function drawWave(inp,out){
+  const W=w.clientWidth,H=w.clientHeight;
+  wx.clearRect(0,0,W,H);
+  wx.strokeStyle='#526270';wx.lineWidth=1;
+  wx.beginPath();wx.moveTo(40,H/2);wx.lineTo(W-10,H/2);wx.moveTo(40,15);wx.lineTo(40,H-25);wx.stroke();
+  wx.fillStyle='#dbe4ec';wx.font='12px Arial';wx.fillText('+V',8,22);wx.fillText('0',21,H/2+4);wx.fillText('−V',8,H-28);
+  const scaleY=(H*.39)/Math.max(Vin,1);
+  function trace(fn,style){
+    wx.strokeStyle=style;wx.lineWidth=2;wx.beginPath();
+    for(let x=40;x<W-10;x++){
+      const ph=t*2*Math.PI*freq/60 + (x-40)/(W-50)*Math.PI*4;
+      const y=H/2-fn(ph)*scaleY;
+      x===40?wx.moveTo(x,y):wx.lineTo(x,y);
+    }wx.stroke();
+  }
+  if(document.getElementById('showInputWave').checked){
+    trace(p=>Vin*Math.sin(p),'#77bdfb');
+  }
+
+  if(document.getElementById('showRectWave').checked){
+    trace(p=>{
+      const raw=Vin*Math.sin(p);
+      const drop = mode==='bridge' ? 2*Vf : Vf;
+      return mode==='half'?Math.max(0,raw-drop):Math.max(0,Math.abs(raw)-drop);
+    },'#ffd166');
+  }
+
+  if(document.getElementById('filter').checked && document.getElementById('showFilterWave').checked){
+    const tau=Math.max(R*cap*1e-6,0.000001);
+    const omega=2*Math.PI*freq;
+    const drop = mode==='bridge' ? 2*Vf : Vf;
+    const peak=Math.max(0,Vin-drop);
+    const cycle=mode==='half'?2*Math.PI:Math.PI;
+
+    // Vout is the envelope of the rectified source and the capacitor's
+    // natural discharge from the previous peak. The output follows the
+    // rectified waveform while it is above the discharge curve. Once the
+    // rectified waveform falls below that curve, the diode turns OFF and
+    // Vout follows the exponential capacitor discharge.
+    trace(p=>{
+      if(peak<=0) return 0;
+      let theta=((p%cycle)+cycle)%cycle;
+      const vSource=mode==='half'
+        ? Math.max(0,Vin*Math.sin(theta)-drop)
+        : Math.max(0,Vin*Math.sin(theta)-drop);
+
+      // Time since the most recent rectified peak.
+      const elapsedPhase=theta>=Math.PI/2
+        ? theta-Math.PI/2
+        : cycle-Math.PI/2+theta;
+      const vDischarge=peak*Math.exp(-(elapsedPhase/omega)/tau);
+
+      return Math.max(vSource,vDischarge);
+    },'#b7e4c7');
+  }
+
+  let ly=25;
+  if(document.getElementById('showInputWave').checked){
+    wx.fillStyle='#77bdfb';wx.fillText('Input AC',W-90,ly);ly+=17;
+  }
+  if(document.getElementById('showRectWave').checked){
+    wx.fillStyle='#ffd166';wx.fillText('Rectified Output',W-125,ly);ly+=17;
+  }
+  if(document.getElementById('filter').checked && document.getElementById('showFilterWave').checked){
+    wx.fillStyle='#b7e4c7';wx.fillText('Smoothed (C)',W-95,ly);
+  }
+}
+
+function physics(inp,out){
+  const positive=inp>=0;
+  const drop = mode==='bridge' ? 2*Vf : Vf;
+  const filterActive=document.getElementById('filter').checked;
+  const conduct = mode==='half'
+    ? (filterActive ? halfDiodeOn : inp>Vf)
+    : mode==='center'
+      ? (filterActive ? centerDiodeOn : Math.abs(inp)>Vf)
+      : (filterActive ? bridgeDiodeOn : Math.abs(inp)>drop);
+  let title='',text='';
+  const rippleFreq=(mode==='half')?freq:2*freq;
+  if(mode==='half'){
+    title=positive?'Half-wave: Positive half-cycle (Diode ON)':'Half-wave: Negative half-cycle (Diode OFF)';
+    text=positive?'The diode is forward biased above barrier voltage V<sub>F</sub>, passing current through load R<sub>m</sub>.':'The diode is reverse biased and blocks current.';
+  }else if(mode==='center'){
+    title=positive?'Centre-tapped Full-wave: D₁ conducts':'Centre-tapped Full-wave: D₂ conducts';
+    text=positive?'D₁ is forward biased during the positive half-cycle.':'D₂ conducts during the negative half-cycle.';
+  }else{
+    title=positive?'Bridge Rectifier: D₁, D₄ conduct (Positive half-cycle)':'Bridge Rectifier: D₂, D₃ conduct (Negative half-cycle)';
+    text=positive?'D₁ and D₄ are forward biased when input exceeds barrier voltage V<sub>F</sub>, driving current through R<sub>m</sub>.':'D₂ and D₃ conduct during the negative half-cycle when input magnitude exceeds V<sub>F</sub>, maintaining unidirectional load current.';
+  }
+  if(document.getElementById('filter').checked) text+=' Capacitor C charges rapidly to peak voltage and discharges exponentially through R<sub>m</sub> between peaks (Ripple frequency = ' + rippleFreq + ' Hz).';
+  document.getElementById('cycleTitle').textContent=title;
+  document.getElementById('cycleText').textContent=text;
+  document.getElementById('physicsText').textContent=mode==='half'?'Half-wave rectification uses 1 diode (50 Hz ripple).':mode==='center'?'Centre-tapped full-wave rectification uses 2 diodes and a centre-tapped transformer.':'Bridge rectification uses 4 diodes (D<sub>1</sub>, D<sub>2</sub>, D<sub>3</sub>, D<sub>4</sub>) where D<sub>1</sub>, D<sub>4</sub> are ON for positive input and D<sub>2</sub>, D<sub>3</sub> are ON for negative input.';
+  document.getElementById('formula').innerHTML=document.getElementById('filter').checked?'Ripple voltage = V<sub>m</sub> − V′ (decreases with larger C)':'V<sub>out</sub> ≈ |V<sub>in</sub>| − 2V<sub>F</sub> during conduction';
+  document.getElementById('diodeStatus').textContent=conduct?'ON':'OFF';
+  document.getElementById('inputStatus').textContent=(inp>=0?'+':'')+inp.toFixed(2)+' V';
+  document.getElementById('outputStatus').textContent=out.toFixed(2)+' V';
+  document.getElementById('currentStatus').textContent=(Math.max(0,out)/R*1000).toFixed(2)+' mA';
+}
+
+function frame(now){
+  // Keep the animation clock bounded to one electrical period. This prevents
+  // floating-point phase growth after long continuous runs and keeps the CRO
+  // numerically stable indefinitely.
+  let elapsed=(now-last)/1000;
+  if(!Number.isFinite(elapsed) || elapsed<0) elapsed=0;
+  const dt=Math.min(.05,elapsed);
+  last=now;
+  if(running){
+    t+=dt*60*speed;
+    const period=60/Math.max(freq,0.000001);
+    if(t>=period || t<=-period) t=((t%period)+period)%period;
+  }
+
+  const ph=t*2*Math.PI*freq/60;
+  const inp=Vin*Math.sin(ph);
+  const drop=mode==='bridge'?2*Vf:Vf;
+  const rawOut=mode==='half'
+    ? Math.max(0,inp-drop)
+    : Math.max(0,Math.abs(inp)-drop);
+
+  const filterOn=document.getElementById('filter').checked;
+
+  // Capacitor / output model.
+  // The capacitor is directly across R_L, so Vout = V_C.  After each
+  // rectified peak, imagine the capacitor's natural exponential discharge.
+  // While the rectified source is ABOVE that discharge curve, the diodes
+  // conduct and the capacitor/output follows the rectified source. When
+  // the rectified source falls BELOW the discharge curve, the diodes turn
+  // OFF and Vout follows the capacitor discharge.
+  if(filterOn){
+    const tau=Math.max(R*cap*1e-6,0.000001);
+    const omega=2*Math.PI*freq;
+    const peak=Math.max(0,Vin-drop);
+    const cycle=mode==='half'?2*Math.PI:Math.PI;
+    const theta=((ph%cycle)+cycle)%cycle;
+
+    // During the first rising half-cycle after reset, allow the capacitor
+    // to charge up with the rectified source until the first peak is reached.
+    if(!capHasPeak){
+      if(theta < Math.PI/2){
+        smoothV=rawOut;
+        halfDiodeOn=(mode==='half' && rawOut>0);
+        centerDiodeOn=(mode==='center' && rawOut>0);
+        bridgeDiodeOn=(mode==='bridge' && rawOut>0);
+      }else{
+        capHasPeak=true;
+        smoothV=peak;
+        halfDiodeOn=false;centerDiodeOn=false;bridgeDiodeOn=false;
+      }
+    }else{
+      // Natural capacitor discharge from the most recent rectified peak.
+      const elapsedPhase=theta>=Math.PI/2
+        ? theta-Math.PI/2
+        : cycle-Math.PI/2+theta;
+      const vDischarge=peak*Math.exp(-(elapsedPhase/omega)/tau);
+
+      // The output is the upper envelope: it follows the rectified source
+      // until the source drops below the capacitor's discharge curve.
+      if(rawOut>=vDischarge){
+        smoothV=rawOut;
+        if(mode==='half'){
+          halfDiodeOn=true;centerDiodeOn=false;bridgeDiodeOn=false;
+        }else if(mode==='center'){
+          centerDiodeOn=true;halfDiodeOn=false;bridgeDiodeOn=false;
+        }else{
+          bridgeDiodeOn=true;halfDiodeOn=false;centerDiodeOn=false;
+        }
+      }else{
+        smoothV=vDischarge;
+        halfDiodeOn=false;centerDiodeOn=false;bridgeDiodeOn=false;
+      }
+    }
+
+    smoothV=Math.max(0,Math.min(smoothV,peak));
+    lastRawOut=rawOut;
+    out=smoothV;
+  }else{
+    smoothV=rawOut;
+    capHasPeak=false;
+    halfDiodeOn=(mode==='half' && inp>Vf);
+    centerDiodeOn=(mode==='center' && Math.abs(inp)>Vf);
+    bridgeDiodeOn=(mode==='bridge' && Math.abs(inp)>2*Vf);
+    out=rawOut;
+  }
+
+  drawCircuit(inp,out);
+  drawWave(inp,out);
+  physics(inp,out);
+  requestAnimationFrame(frame);
+}
+updateControls();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
