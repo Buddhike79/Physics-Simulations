@@ -46,6 +46,7 @@
 .calc-head h2{margin-bottom:6px}
 .calc-function{display:flex;flex-direction:column;gap:7px;padding:10px 12px;background:#f7f9fc;border:1px solid #dbe2ea;border-radius:12px;white-space:nowrap}
 .calc-readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.identity-equation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:center;margin-top:8px}.identity-values{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}.identity-final{text-align:right}.identity-box{grid-column:1/-1;text-align:center;background:#f4f6f8;border:1px solid var(--line);border-radius:9px;padding:7px;color:var(--accent)}
 .calc-readouts .value span{display:block;color:#697386;font-size:13px;margin-bottom:3px}
 .step-card{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid #e1e6ed;border-radius:12px;margin:9px 0;background:#fbfcfe}
 .step-number{width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#9333ea;color:white;font-weight:700;flex:none}
@@ -129,7 +130,7 @@ body{background:#f3f4f6;color:var(--ink);font-family:Inter,ui-sans-serif,system-
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.eyebrow{font-size:12px;letter-spacing:.22em;font-weight:800;color:var(--accent)}
 .site-header h1{margin:0;font-size:clamp(24px,4vw,36px);letter-spacing:.07em;font-weight:750}.course-title{font-size:12px;letter-spacing:.16em;color:var(--muted);font-weight:700}
 .header-line{height:1px;background:var(--line);margin:12px 0 8px}.site-header .subtitle{font-size:14px;color:var(--muted);margin:0}
-.journey{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 7px}.journey-track{position:absolute;left:9%;right:9%;top:28px;height:1px;background:#d6dbe3;z-index:0}
+.journey{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 7px}.journey-track{position:absolute;left:9%;right:9%;top:28px;height:1px;background:#d6dbe3;z-index:0}
 .tabs button{position:relative;z-index:1;border:1px solid transparent;background:transparent;border-radius:12px;min-height:66px;padding:8px 10px;display:flex;align-items:center;gap:9px;text-align:left;color:var(--muted)}
 .tabs button:hover{background:#fff;border-color:var(--line)}.tabs button.active{background:#fff;color:var(--ink);border-color:#cfd6e0;box-shadow:0 2px 10px rgba(23,32,51,.05)}
 .tab-num{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eef1f5;color:#566174;font-size:11px;font-weight:800;letter-spacing:.04em;flex:none}
@@ -139,10 +140,13 @@ body{background:#f3f4f6;color:var(--ink);font-family:Inter,ui-sans-serif,system-
 .card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px}.section-kicker{font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--accent);margin-bottom:3px}
 .panel h2{font-size:clamp(20px,2.4vw,27px);letter-spacing:-.02em}.panel p{color:var(--muted)}
 .concept-line{display:flex;align-items:center;justify-content:center;gap:8px;color:#7b8493;font-size:10px;font-weight:800;letter-spacing:.13em;padding:2px 0 10px}.concept-line strong{color:#a2aab6;font-size:13px}
+.physics-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}.physics-readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.physics-readouts .value{padding:7px}.physics-equation{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f7f8fa;border:1px solid var(--line);padding:9px 11px;border-radius:9px;margin:8px 0;color:#253b73;font-size:13px}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:7px 0}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}.physics-controls{display:grid;grid-template-columns:1fr 90px;gap:6px;align-items:center;margin:8px 0}.physics-controls label{font-size:13px;font-weight:700}.physics-controls b{text-align:right;color:var(--accent)}
 .calc-side{background:#fafbfc}.step-card{border-color:#e2e6ec;background:#fff}.note{background:#f7f3e8;border:1px solid #eee4c9}.formula{background:#f7f8fa;border-left-color:var(--ink)}
 footer{font-size:11px;padding:12px;color:#7b8493}
-@media(max-width:820px){.wrap{padding:10px}.site-header{padding:15px}.journey{grid-template-columns:repeat(4,minmax(120px,1fr));overflow-x:auto;padding-bottom:2px}.journey-track{display:none}.tabs button{min-height:58px}.tab-num{width:32px;height:32px}.tab-copy small{font-size:10px}}
-@media(max-width:600px){.brand{gap:5px 9px}.site-header h1{font-size:25px}.course-title{width:100%}.journey{grid-template-columns:repeat(4,145px)}.global-controls button{width:100%}.concept-line{justify-content:flex-start;overflow:hidden;white-space:nowrap;font-size:9px}.panel{padding:9px}.card{padding:9px}}
+@media(max-width:820px){.wrap{padding:10px}.site-header{padding:15px}.journey{grid-template-columns:repeat(5,minmax(120px,1fr));overflow-x:auto;padding-bottom:2px}.journey-track{display:none}.tabs button{min-height:58px}.tab-num{width:32px;height:32px}.tab-copy small{font-size:10px}}
+@media(max-width:600px){.brand{gap:5px 9px}.site-header h1{font-size:25px}.course-title{width:100%}.journey{grid-template-columns:repeat(5,145px)}.global-controls button{width:100%}.concept-line{justify-content:flex-start;overflow:hidden;white-space:nowrap;font-size:9px}.panel{padding:9px}.card{padding:9px}}
+@media(max-width:850px){.physics-grid{grid-template-columns:1fr}}@media(max-width:520px){.physics-readouts{grid-template-columns:1fr 1fr}.physics-controls{grid-template-columns:1fr 76px}}
+@media(max-width:600px){.identity-equation{grid-template-columns:1fr}.identity-final{text-align:left}.identity-values{gap:7px;font-size:13px}}
 
 </style>
 </head>
@@ -163,7 +167,8 @@ footer{font-size:11px;padding:12px;color:#7b8493}
   <button class="tab active" data-tab="sineLab"><span class="tab-num">01</span><span class="tab-copy"><b>ROTATION</b><small>Sine · Cosine · Tangent</small></span></button>
   <button class="tab" data-tab="identity"><span class="tab-num">02</span><span class="tab-copy"><b>RELATIONSHIP</b><small>Discover the identity</small></span></button>
   <button class="tab" data-tab="transform"><span class="tab-num">03</span><span class="tab-copy"><b>MOTION</b><small>Change the wave</small></span></button>
-  <button class="tab" data-tab="calculus"><span class="tab-num">04</span><span class="tab-copy"><b>CHANGE</b><small>Enter calculus</small></span></button>
+  <button class="tab" data-tab="physics"><span class="tab-num">04</span><span class="tab-copy"><b>OSCILLATION</b><small>Physics of a spring</small></span></button>
+  <button class="tab" data-tab="calculus"><span class="tab-num">05</span><span class="tab-copy"><b>CHANGE</b><small>Enter calculus</small></span></button>
 </div>
 <div id="globalControls" class="global-controls"><button id="globalPlayPause" class="primary" type="button">▶ Play</button></div>
 
@@ -213,7 +218,7 @@ footer{font-size:11px;padding:12px;color:#7b8493}
   <p>The unit circle and Pythagoras force a relationship between them.</p>
   <div class="card">
     <div class="mathline">Unit circle: <b>x² + y² = 1</b></div>
-    <canvas id="identityCanvas" width="700" height="500"></canvas>
+    <canvas id="identityCanvas" width="900" height="370"></canvas>
     <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
       <label style="display:flex;align-items:center;gap:8px">
         <span>θ</span>
@@ -275,6 +280,36 @@ footer{font-size:11px;padding:12px;color:#7b8493}
   </div>
 </section>
 
+<section id="physics" class="panel">
+  <div class="concept-line"><span>DISPLACEMENT</span><strong>→</strong><span>VELOCITY</span><strong>→</strong><span>FORCE</span><strong>→</strong><span>ENERGY</span></div>
+  <div class="physics-grid">
+    <div class="card">
+      <div class="section-kicker">04 / OSCILLATION</div>
+      <h2>Simple harmonic motion: a mass on a spring</h2>
+      <p>Time is now the independent variable. Change the system, then watch the mass and its motion graphs respond together.</p>
+      <canvas id="physicsCanvas" width="1000" height="650"></canvas>
+      <div class="legend"><span><i style="background:#2563eb"></i>position x</span><span><i style="background:#16a34a"></i>velocity v</span><span><i style="background:#9333ea"></i>acceleration a</span></div>
+      <div class="physics-readouts">
+        <div class="value">Time<b id="physicsTime">0.00 s</b></div><div class="value">Position<b id="physicsX">0.000 m</b></div><div class="value">Velocity<b id="physicsV">0.000 m/s</b></div>
+        <div class="value">Acceleration<b id="physicsA">0.000 m/s²</b></div><div class="value">Spring force<b id="physicsF">0.000 N</b></div><div class="value">Mechanical energy<b id="physicsE">0.000 J</b></div>
+      </div>
+    </div>
+    <div class="card calc-side">
+      <h2>Set the system</h2>
+      <div class="physics-controls"><label for="physicsAmp">Amplitude A</label><b id="physicsAmpVal">1.00 m</b><input id="physicsAmp" type="range" min="0.2" max="2" step="0.1" value="1"><span></span></div>
+      <div class="physics-controls"><label for="physicsMass">Mass m</label><b id="physicsMassVal">1.00 kg</b><input id="physicsMass" type="range" min="0.25" max="5" step="0.25" value="1"><span></span></div>
+      <div class="physics-controls"><label for="physicsK">Spring constant k</label><b id="physicsKVal">10.0 N/m</b><input id="physicsK" type="range" min="1" max="40" step="1" value="10"><span></span></div>
+      <div class="physics-controls"><label for="physicsDamping">Damping b</label><b id="physicsDampingVal">0.00 N·s/m</b><input id="physicsDamping" type="range" min="0" max="1" step="0.05" value="0"><span></span></div>
+      <button id="physicsReset" type="button">↺ Reset system</button>
+      <div class="physics-equation" id="physicsEquation">x(t) = A cos(ωt)</div>
+      <div class="note"><b>Model:</b><br>F = −kx − bv. With no damping, mechanical energy stays constant. Damping transfers energy out of the oscillator.</div>
+      <div class="step-card"><span class="step-number">1</span><div><b>Amplitude</b><br>Sets the maximum displacement.</div></div>
+      <div class="step-card"><span class="step-number">2</span><div><b>Mass and stiffness</b><br>Set ω₀ = √(k/m), so they control the period.</div></div>
+      <div class="step-card"><span class="step-number">3</span><div><b>Damping</b><br>Reduces the amplitude and mechanical energy over time.</div></div>
+    </div>
+  </div>
+</section>
+
 <section id="calculus" class="panel">
   <div class="concept-line"><span>POSITION</span><strong>→</strong><span>TANGENT</span><strong>→</strong><span>SLOPE</span><strong>→</strong><span>DERIVATIVE</span></div>
   <div class="calc-layout">
@@ -292,7 +327,7 @@ footer{font-size:11px;padding:12px;color:#7b8493}
         </div>
       </div>
 
-      <canvas id="calcMainCanvas" width="1000" height="650"></canvas>
+      <canvas id="calcMainCanvas" width="1000" height="540"></canvas>
 
       <div class="calc-readouts">
         <div class="value"><span>θ</span><b id="calcTheta">1.05 rad</b></div>
@@ -343,7 +378,7 @@ footer{font-size:11px;padding:12px;color:#7b8493}
   </div>
 </section>
 
-<footer>Trigonometry for Calculus • Interactive exploration</footer>Draft 7 • Trigonometry for Calculus • Interactive exploration</footer>
+<footer>Trigonometry for Calculus &amp; Physics • Interactive exploration</footer>
 </div>
 
 <script>
@@ -668,11 +703,12 @@ function drawIdentity(){
   const c=$("identityCanvas"),ctx=clear(c);
   const deg=Math.max(0,Math.min(360,+$("identityAngle").value||0));
   const a=d2r(deg);
-  const cx=250,cy=250,R=180;
+  // A wide, shallow composition keeps the identity diagram focused rather than bulky.
+  const cx=210,cy=185,R=132;
 
   ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(45,cy);ctx.lineTo(455,cy);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,445);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(55,cy);ctx.lineTo(365,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,35);ctx.lineTo(cx,335);ctx.stroke();
 
   ctx.strokeStyle="#172033";ctx.lineWidth=3;
   ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.stroke();
@@ -689,14 +725,14 @@ function drawIdentity(){
   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
 
   ctx.fillStyle="#172033";
-  ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);ctx.fill();
-  ctx.font="bold 18px Arial";ctx.fillText("P",px+10,py-10);
+  ctx.beginPath();ctx.arc(px,py,7,0,2*Math.PI);ctx.fill();
+  ctx.font="bold 16px Arial";ctx.fillText("P",px+9,py-9);
 
   ctx.strokeStyle="#172033";ctx.lineWidth=2;
   const q=14;
   ctx.beginPath();ctx.moveTo(px-q,cy);ctx.lineTo(px-q,cy-q);ctx.lineTo(px,cy-q);ctx.stroke();
 
-  ctx.font="bold 16px Arial";
+  ctx.font="bold 14px Arial";
   ctx.fillStyle="#2563eb";ctx.fillText("cos θ",cx+(px-cx)/2-25,cy+28);
 
   ctx.fillStyle="#16a34a";
@@ -711,16 +747,15 @@ function drawIdentity(){
   ctx.fillText("θ",cx+48*Math.cos(a/2)-5,cy-48*Math.sin(a/2));
 
   ctx.fillStyle="#172033";ctx.font="bold 16px Arial";
-  ctx.fillText("P = (cos θ, sin θ)",485,115);
-  ctx.font="15px Arial";
-  ctx.fillText("Horizontal leg = cos θ",485,155);
-  ctx.fillText("Vertical leg = sin θ",485,185);
-  ctx.fillText("Radius = 1",485,215);
-  ctx.font="bold 18px Arial";
-  ctx.fillText("(cos θ)² + (sin θ)² = 1²",465,285);
-  ctx.font="15px Arial";
-  ctx.fillText("This is Pythagoras applied",465,325);
-  ctx.fillText("to the right triangle.",465,350);
+  ctx.fillText("P = (cos θ, sin θ)",425,100);
+  ctx.font="14px Arial";
+  ctx.fillText("Horizontal leg = cos θ",425,132);
+  ctx.fillText("Vertical leg = sin θ",425,158);
+  ctx.fillText("Radius = 1",425,184);
+  ctx.font="bold 17px Arial";
+  ctx.fillText("(cos θ)² + (sin θ)² = 1²",425,235);
+  ctx.font="14px Arial";
+  ctx.fillText("Pythagoras on the unit circle.",425,265);
 
   const sv=Math.sin(a),co=Math.cos(a);
   $("sin2").textContent=(sv*sv).toFixed(3);
@@ -896,6 +931,56 @@ $("motionReset").onclick=()=>{
   drawMotion();
 };
 
+// ---------- SIMPLE HARMONIC MOTION ----------
+let physicsAmp=1,physicsMass=1,physicsK=10,physicsDamping=0,physicsT=0;
+let physicsPlaying=false,physicsFrame=null,physicsLast=null;
+function physicsState(t){
+  const w0=Math.sqrt(physicsK/physicsMass), gamma=physicsDamping/(2*physicsMass);
+  // Underdamped solution; values in this lab's range are chosen to keep it oscillatory.
+  const wd=Math.sqrt(Math.max(0.0001,w0*w0-gamma*gamma));
+  const e=Math.exp(-gamma*t), c=Math.cos(wd*t), s=Math.sin(wd*t), A=physicsAmp;
+  const x=A*e*c;
+  const v=A*e*(-gamma*c-wd*s);
+  const a=(-physicsK*x-physicsDamping*v)/physicsMass;
+  return {w0,gamma,wd,x,v,a,force:-physicsK*x-physicsDamping*v,energy:.5*physicsMass*v*v+.5*physicsK*x*x};
+}
+function drawPhysics(){
+  const c=$("physicsCanvas"),ctx=clear(c),w=c.width,h=c.height;
+  const q=physicsState(physicsT), left=55,right=30;
+  // Three compact graph lanes, with enough clearance below acceleration.
+  const positionBase=350,velocityBase=470,accelerationBase=590,graphAmp=48;
+  const graphTop=positionBase-graphAmp-12,graphBottom=accelerationBase+graphAmp+8;
+  const X=t=>left+t/16*(w-left-right);
+  const scale=Math.max(physicsAmp,1), massSize=42+physicsMass*7;
+  // spring and mass
+  const wall=80,eq=440,massX=eq+q.x/scale*220;
+  ctx.fillStyle="#d8dee8";ctx.fillRect(wall-10,55,20,205);ctx.strokeStyle="#172033";ctx.lineWidth=3;ctx.strokeRect(wall-10,55,20,205);
+  ctx.strokeStyle="#667085";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(wall,155);
+  const coils=14,start=wall+5,end=massX-massSize/2;
+  for(let i=0;i<=coils;i++){const xx=start+(end-start)*i/coils;ctx.lineTo(xx,155+(i===0||i===coils?0:(i%2?18:-18)));}ctx.stroke();
+  ctx.setLineDash([5,5]);ctx.strokeStyle="#aab3c0";ctx.beginPath();ctx.moveTo(eq,50);ctx.lineTo(eq,275);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#2563eb";ctx.fillRect(massX-massSize/2,125,massSize,60);ctx.fillStyle="#172033";ctx.font="bold 15px Arial";ctx.fillText("m = "+physicsMass.toFixed(2)+" kg",massX-massSize/2,215);
+  ctx.fillStyle="#667085";ctx.font="14px Arial";ctx.fillText("equilibrium",eq-35,42);ctx.fillText("x = "+q.x.toFixed(3)+" m",left,290);
+  // axes and graphs
+  ctx.strokeStyle="#dbe1e9";ctx.lineWidth=1;[0,4,8,12,16].forEach(t=>{ctx.beginPath();ctx.moveTo(X(t),graphTop);ctx.lineTo(X(t),graphBottom);ctx.stroke();});
+  [positionBase,velocityBase,accelerationBase].forEach(y=>{ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();});
+  ctx.strokeStyle="#172033";ctx.lineWidth=1.5;[positionBase,velocityBase,accelerationBase].forEach(y=>{ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();});
+  const series=[{key:"x",color:"#2563eb",label:"Position x (m)",scale:scale,base:positionBase},{key:"v",color:"#16a34a",label:"Velocity v (m/s)",scale:Math.max(physicsAmp*q.w0,1),base:velocityBase},{key:"a",color:"#9333ea",label:"Acceleration a (m/s²)",scale:Math.max(physicsAmp*q.w0*q.w0,1),base:accelerationBase}];
+  series.forEach(ser=>{const base=ser.base;ctx.strokeStyle=ser.color;ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<=500;i++){const t=16*i/500,val=physicsState(t)[ser.key],px=X(t),py=base-val/ser.scale*graphAmp;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();ctx.fillStyle=ser.color;ctx.font="bold 17px Arial";ctx.fillText(ser.label,left+8,base-60);const now=q[ser.key];ctx.beginPath();ctx.arc(X(physicsT),base-now/ser.scale*graphAmp,6,0,2*Math.PI);ctx.fill();});
+  ctx.strokeStyle="#172033";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,accelerationBase);ctx.lineTo(w-right,accelerationBase);ctx.stroke();ctx.fillStyle="#667085";ctx.font="15px Arial";[0,4,8,12,16].forEach(t=>ctx.fillText(t+" s",X(t)-11,accelerationBase+25));
+  $("physicsTime").textContent=physicsT.toFixed(2)+" s";$("physicsX").textContent=q.x.toFixed(3)+" m";$("physicsV").textContent=q.v.toFixed(3)+" m/s";$("physicsA").textContent=q.a.toFixed(3)+" m/s²";$("physicsF").textContent=q.force.toFixed(3)+" N";$("physicsE").textContent=q.energy.toFixed(3)+" J";
+  $("physicsAmpVal").textContent=physicsAmp.toFixed(2)+" m";$("physicsMassVal").textContent=physicsMass.toFixed(2)+" kg";$("physicsKVal").textContent=physicsK.toFixed(1)+" N/m";$("physicsDampingVal").textContent=physicsDamping.toFixed(2)+" N·s/m";
+  $("physicsEquation").textContent=physicsDamping===0?"x(t) = "+physicsAmp.toFixed(2)+" cos("+q.w0.toFixed(2)+"t) m":"x(t) = "+physicsAmp.toFixed(2)+"e^(−"+q.gamma.toFixed(2)+"t) cos("+q.wd.toFixed(2)+"t) m";
+}
+$("physicsAmp").oninput=()=>{physicsAmp=+$("physicsAmp").value;drawPhysics();};
+$("physicsMass").oninput=()=>{physicsMass=+$("physicsMass").value;drawPhysics();};
+$("physicsK").oninput=()=>{physicsK=+$("physicsK").value;drawPhysics();};
+$("physicsDamping").oninput=()=>{physicsDamping=+$("physicsDamping").value;drawPhysics();};
+function animatePhysics(t){if(!physicsPlaying)return;if(physicsLast===null)physicsLast=t;physicsT+=Math.min(50,t-physicsLast)/1000;physicsLast=t;if(physicsT>16)physicsT=0;drawPhysics();physicsFrame=requestAnimationFrame(animatePhysics);}
+function playPhysics(){if(!physicsPlaying){physicsPlaying=true;physicsLast=null;physicsFrame=requestAnimationFrame(animatePhysics);}}
+function pausePhysics(){physicsPlaying=false;physicsLast=null;if(physicsFrame!==null)cancelAnimationFrame(physicsFrame);physicsFrame=null;drawPhysics();}
+$("physicsReset").onclick=()=>{pausePhysics();physicsAmp=1;physicsMass=1;physicsK=10;physicsDamping=0;physicsT=0;$("physicsAmp").value=1;$("physicsMass").value=1;$("physicsK").value=10;$("physicsDamping").value=0;drawPhysics();};
+
 
 let calcPlaying=false, calcFrame=null, calcLast=null, calcAngle=60;
 let calcFn="sin";
@@ -922,8 +1007,9 @@ function calcDerivativeText(){
 
 function drawCalc(){
   const c=$("calcMainCanvas"),ctx=clear(c),w=c.width,h=c.height;
-  const L=58,R=25,top=42,gap=55;
-  const topH=285,bottomTop=top+topH+gap,bottomH=220;
+  // Use the available canvas height efficiently: tighter plots, same readable scales.
+  const L=58,R=25,top=38,gap=38;
+  const topH=Math.round(h*0.35),bottomTop=top+topH+gap,bottomH=h-bottomTop-34;
   const xmin=0,xmax=2*Math.PI;
 
   const X=x=>(x-xmin)/(xmax-xmin)*(w-L-R)+L;
@@ -932,9 +1018,9 @@ function drawCalc(){
 
   // Section titles
   ctx.fillStyle="#172033";
-  ctx.font="bold 21px Arial";
-  ctx.fillText("Function + tangent line",L,25);
-  ctx.fillText("Slope (rate of change)",L,bottomTop-25);
+  ctx.font="bold 18px Arial";
+  ctx.fillText("Function + tangent line",L,23);
+  ctx.fillText("Slope (rate of change)",L,bottomTop-16);
 
   // Shared vertical guides/grid
   ctx.strokeStyle="#e5e9ef";ctx.lineWidth=1;
@@ -986,8 +1072,8 @@ function drawCalc(){
   ctx.fillStyle="#9333ea";ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);ctx.fill();
 
   // Main graph labels
-  ctx.fillStyle="#172033";ctx.font="bold 17px Arial";
-  ctx.fillText("y = "+calcFnLabel(),L+8,top+21);
+  ctx.fillStyle="#172033";ctx.font="bold 15px Arial";
+  ctx.fillText("y = "+calcFnLabel(),L+8,top+19);
   ctx.font="13px Arial";
   ctx.fillText("0",L-18,YTop(0)+4);
   ctx.fillText("π/2",X(Math.PI/2)-12,YTop(0)+20);
@@ -1028,8 +1114,8 @@ function drawCalc(){
     ctx.fillStyle="#9333ea";ctx.beginPath();ctx.arc(X(a),YSlope(slopeNow),7,0,2*Math.PI);ctx.fill();
   }
 
-  ctx.fillStyle="#172033";ctx.font="bold 16px Arial";
-  ctx.fillText("slope of "+calcFnLabel(),L+8,bottomTop+21);
+  ctx.fillStyle="#172033";ctx.font="bold 15px Arial";
+  ctx.fillText("slope of "+calcFnLabel(),L+8,bottomTop+19);
   ctx.font="13px Arial";
   if(calcFn==="tan"){
     ctx.fillText("1",L-16,YSlope(1)+4);
@@ -1044,8 +1130,9 @@ function drawCalc(){
   ctx.fillText("θ",w-R-5,YSlope(0)-7);
 
   $("calcTheta").textContent=a.toFixed(2)+" rad ("+calcAngle.toFixed(1)+"°)";
-  $("calcY").textContent=Number.isFinite(y)?y.toFixed(3):"undefined";
-  $("calcSlope").textContent=Number.isFinite(m)?m.toFixed(3):"very large";
+  const tanUndefined=calcFn==="tan" && Math.abs(Math.cos(a))<0.001;
+  $("calcY").textContent=tanUndefined?"undefined":Number.isFinite(y)?y.toFixed(3):"undefined";
+  $("calcSlope").textContent=tanUndefined?"undefined":Number.isFinite(m)?m.toFixed(3):"very large";
   $("calcDerivativeFormula").innerHTML="<b>"+calcDerivativeText()+"</b>";
 }
 
@@ -1102,10 +1189,10 @@ function pauseCalc(){
 // and which animation it controls.
 let activeTab="sineLab";
 function updateGlobalPlayPause(){
-  const visible = activeTab==="sineLab" || activeTab==="transform" || activeTab==="calculus";
+  const visible = activeTab==="sineLab" || activeTab==="transform" || activeTab==="physics" || activeTab==="calculus";
   $("globalControls").style.display=visible?"flex":"none";
   const playing = activeTab==="sineLab" ? sinePlaying :
-                  activeTab==="transform" ? motionPlaying : calcPlaying;
+                  activeTab==="transform" ? motionPlaying : activeTab==="physics" ? physicsPlaying : calcPlaying;
   $("globalPlayPause").textContent=playing?"⏸ Pause":"▶ Play";
 }
 $("globalPlayPause").onclick=()=>{
@@ -1113,6 +1200,8 @@ $("globalPlayPause").onclick=()=>{
     if(sinePlaying)pauseSine();else playSine();
   }else if(activeTab==="transform"){
     if(motionPlaying)pauseMotion();else playMotion();
+  }else if(activeTab==="physics"){
+    if(physicsPlaying)pausePhysics();else playPhysics();
   }else if(activeTab==="calculus"){
     if(calcPlaying)pauseCalc();else playCalc();
   }
@@ -1120,6 +1209,11 @@ $("globalPlayPause").onclick=()=>{
 };
 
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+  // Only the visible lab animates, preventing hidden tabs from consuming resources.
+  if(b.dataset.tab!=="sineLab")pauseSine();
+  if(b.dataset.tab!=="transform")pauseMotion();
+  if(b.dataset.tab!=="physics")pausePhysics();
+  if(b.dataset.tab!=="calculus")pauseCalc();
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
   document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
   b.classList.add("active");$(b.dataset.tab).classList.add("active");
@@ -1132,7 +1226,7 @@ function syncGlobalButton(){
   requestAnimationFrame(syncGlobalButton);
 }
 
-drawSineLab(); drawIdentity(); drawMotion(); drawCalc();
+drawSineLab(); drawIdentity(); drawMotion(); drawPhysics(); drawCalc();
 syncGlobalButton();
 
 </script>
