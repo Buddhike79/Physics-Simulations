@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trigonometry for Calculus — Interactive Lab</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fb;color:#172033;line-height:1.45}
+  .wrap{max-width:1200px;margin:auto;padding:10px}
+  header{background:white;border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 3px 14px #00000012}
+  h1{margin:0 0 5px;font-size:clamp(24px,4vw,38px)}
+  .subtitle{margin:0;color:#5b6475}
+  .tabs{display:flex;gap:8px;overflow:auto;margin:14px 0}
+  button{border:1px solid #cbd2df;background:white;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+  button.active,button.primary{background:#172033;color:white;border-color:#172033}
+  .panel{display:none;background:white;border-radius:18px;padding:18px;box-shadow:0 3px 14px #00000012}
+  .panel.active{display:block}
+  .grid{display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,1fr);gap:18px}
+  .card{border:1px solid #e0e5ee;border-radius:14px;padding:15px;background:#fff}
+  .card h2,.card h3{margin-top:0}
+  canvas{width:100%;height:auto;border:1px solid #e1e5ec;border-radius:12px;background:#fff;touch-action:pan-y}
+  .controls{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center}
+  input[type=range]{width:100%}
+  input[type=number]{width:100%;padding:9px;border:1px solid #ccd3df;border-radius:8px}
+  .values{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .value{background:#f1f4f8;border-radius:10px;padding:10px;text-align:center}
+  .value b{display:block;font-size:18px;margin-top:3px}
+  .formula{background:#f7f8fb;border-left:4px solid #172033;padding:10px 12px;border-radius:6px;margin:10px 0}
+  .note{background:#fff8df;border-radius:10px;padding:11px;margin-top:10px}
+  .check{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .big{font-size:22px;font-weight:700}
+  .challenge{margin-top:14px;padding:14px;border-radius:12px;background:#eef5ff}
+  .hidden{display:none}
+  footer{text-align:center;color:#697386;padding:18px}
+  @media(max-width:750px){
+    .grid{grid-template-columns:1fr}
+    .values{grid-template-columns:1fr 1fr}
+    .tabs button{white-space:nowrap}
+  }
+.global-controls{display:flex;justify-content:flex-end;margin:0 0 10px}.global-controls button{min-width:110px}
+
+.calc-layout{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(260px,0.85fr);gap:14px}
+.calc-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.calc-head h2{margin-bottom:6px}
+.calc-function{display:flex;flex-direction:column;gap:7px;padding:10px 12px;background:#f7f9fc;border:1px solid #dbe2ea;border-radius:12px;white-space:nowrap}
+.calc-readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.calc-readouts .value span{display:block;color:#697386;font-size:13px;margin-bottom:3px}
+.step-card{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid #e1e6ed;border-radius:12px;margin:9px 0;background:#fbfcfe}
+.step-number{width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#9333ea;color:white;font-weight:700;flex:none}
+#calcMainCanvas{width:100%;height:auto;display:block;border-radius:12px}
+@media(max-width:900px){.calc-layout{grid-template-columns:1fr}.calc-head{flex-direction:column}.calc-function{width:100%;box-sizing:border-box}.calc-readouts{grid-template-columns:1fr 1fr}}
+
+
+/* Mobile-friendly layout */
+html,body{width:100%;overflow-x:hidden}
+.wrap{width:100%;padding:12px}
+header{padding:15px;border-radius:14px}
+.panel{padding:12px;border-radius:14px}
+.card{padding:12px}
+.tabs{margin:10px 0;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.tabs button{flex:0 0 auto;min-height:44px;padding:10px 12px}
+.global-controls{justify-content:stretch}
+.global-controls button{width:100%;min-height:44px}
+.controls{grid-template-columns:minmax(0,1fr) 92px}
+.calc-layout{grid-template-columns:1fr;gap:10px}
+.calc-head{gap:10px}
+.calc-function{display:grid;grid-template-columns:1fr;white-space:normal}
+.calc-readouts{grid-template-columns:repeat(3,1fr)}
+.calc-readouts .value{padding:7px 4px}
+.calc-readouts .value b{font-size:15px}
+.row button{min-height:44px}
+input[type=range]{min-height:32px}
+input[type=number]{min-height:44px;font-size:16px}
+footer{padding:12px 4px}
+@media(max-width:520px){
+  h1{font-size:25px}
+  .subtitle{font-size:14px}
+  .panel{padding:9px}
+  .card{padding:10px}
+  .grid{gap:10px}
+  .controls{grid-template-columns:minmax(0,1fr) 84px}
+  .values,.calc-readouts{grid-template-columns:1fr 1fr}
+  .calc-readouts .value:last-child{grid-column:1/-1}
+  .calc-head h2{font-size:20px}
+  .calc-function{font-size:14px}
+  canvas{max-width:100%}
+}
+@media(max-width:360px){
+  .wrap{padding:8px}
+  .panel{padding:7px}
+  .calc-readouts{grid-template-columns:1fr}
+  .calc-readouts .value:last-child{grid-column:auto}
+  .controls{grid-template-columns:1fr}
+}
+
+
+/* Compact layout refinement */
+.wrap{padding:10px}
+header{padding:12px 15px;margin-bottom:8px}
+header h1{margin:0 0 3px}
+header .subtitle{margin:0}
+.tabs{margin:7px 0;gap:5px}
+.panel{padding:9px}
+.card{padding:10px}
+.panel>h2,.card>h2{margin-top:0;margin-bottom:7px}
+.panel>p,.card>p{margin-top:4px;margin-bottom:7px}
+.grid{gap:9px}
+.row{gap:7px}
+.controls{gap:7px;margin-top:7px}
+.value{padding:7px 8px}
+.note{padding:8px 10px;margin:7px 0}
+.formula{padding:8px 10px;margin:7px 0}
+.step-card{margin:6px 0;padding:7px 9px}
+.calc-layout{gap:10px}
+.calc-main .calc-head{margin-bottom:4px}
+.calc-readouts{margin-top:6px;gap:6px}
+.calc-readouts .value{padding:6px}
+.global-controls{margin:0 0 6px}
+footer{padding:8px 4px}
+
+
+/* Version 19: elegant mathematical-laboratory visual system */
+:root{--ink:#172033;--muted:#667085;--line:#dfe4eb;--surface:#fff;--soft:#f4f6f8;--accent:#253b73}
+body{background:#f3f4f6;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.wrap{max-width:1180px;padding:18px}
+.site-header{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 24px 16px;box-shadow:0 4px 18px rgba(23,32,51,.05)}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.eyebrow{font-size:12px;letter-spacing:.22em;font-weight:800;color:var(--accent)}
+.site-header h1{margin:0;font-size:clamp(24px,4vw,36px);letter-spacing:.07em;font-weight:750}.course-title{font-size:12px;letter-spacing:.16em;color:var(--muted);font-weight:700}
+.header-line{height:1px;background:var(--line);margin:12px 0 8px}.site-header .subtitle{font-size:14px;color:var(--muted);margin:0}
+.journey{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 7px}.journey-track{position:absolute;left:9%;right:9%;top:28px;height:1px;background:#d6dbe3;z-index:0}
+.tabs button{position:relative;z-index:1;border:1px solid transparent;background:transparent;border-radius:12px;min-height:66px;padding:8px 10px;display:flex;align-items:center;gap:9px;text-align:left;color:var(--muted)}
+.tabs button:hover{background:#fff;border-color:var(--line)}.tabs button.active{background:#fff;color:var(--ink);border-color:#cfd6e0;box-shadow:0 2px 10px rgba(23,32,51,.05)}
+.tab-num{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eef1f5;color:#566174;font-size:11px;font-weight:800;letter-spacing:.04em;flex:none}
+.tabs button.active .tab-num{background:var(--ink);color:#fff}.tab-copy{display:flex;flex-direction:column;min-width:0}.tab-copy b{font-size:11px;letter-spacing:.13em}.tab-copy small{font-size:11px;color:var(--muted);margin-top:2px;white-space:normal}
+.global-controls{display:flex;justify-content:flex-end;margin:0 0 7px}.global-controls button{min-width:104px;border-radius:9px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 4px 18px rgba(23,32,51,.045)}
+.card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px}.section-kicker{font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--accent);margin-bottom:3px}
+.panel h2{font-size:clamp(20px,2.4vw,27px);letter-spacing:-.02em}.panel p{color:var(--muted)}
+.concept-line{display:flex;align-items:center;justify-content:center;gap:8px;color:#7b8493;font-size:10px;font-weight:800;letter-spacing:.13em;padding:2px 0 10px}.concept-line strong{color:#a2aab6;font-size:13px}
+.calc-side{background:#fafbfc}.step-card{border-color:#e2e6ec;background:#fff}.note{background:#f7f3e8;border:1px solid #eee4c9}.formula{background:#f7f8fa;border-left-color:var(--ink)}
+footer{font-size:11px;padding:12px;color:#7b8493}
+@media(max-width:820px){.wrap{padding:10px}.site-header{padding:15px}.journey{grid-template-columns:repeat(4,minmax(120px,1fr));overflow-x:auto;padding-bottom:2px}.journey-track{display:none}.tabs button{min-height:58px}.tab-num{width:32px;height:32px}.tab-copy small{font-size:10px}}
+@media(max-width:600px){.brand{gap:5px 9px}.site-header h1{font-size:25px}.course-title{width:100%}.journey{grid-template-columns:repeat(4,145px)}.global-controls button{width:100%}.concept-line{justify-content:flex-start;overflow:hidden;white-space:nowrap;font-size:9px}.panel{padding:9px}.card{padding:9px}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="site-header">
+  <div class="brand">
+    <div class="eyebrow">CALCULUS</div>
+    <h1>THE ART OF CHANGE</h1>
+    <div class="course-title">TRIGONOMETRY FOR CALCULUS</div>
+  </div>
+  <div class="header-line"></div>
+  <p class="subtitle">From rotation → waves → change → derivatives</p>
+</header>
+
+<div class="journey">
+  <div class="journey-track"></div>
+  <button class="tab active" data-tab="sineLab"><span class="tab-num">01</span><span class="tab-copy"><b>ROTATION</b><small>Sine · Cosine · Tangent</small></span></button>
+  <button class="tab" data-tab="identity"><span class="tab-num">02</span><span class="tab-copy"><b>RELATIONSHIP</b><small>Discover the identity</small></span></button>
+  <button class="tab" data-tab="transform"><span class="tab-num">03</span><span class="tab-copy"><b>MOTION</b><small>Change the wave</small></span></button>
+  <button class="tab" data-tab="calculus"><span class="tab-num">04</span><span class="tab-copy"><b>CHANGE</b><small>Enter calculus</small></span></button>
+</div>
+<div id="globalControls" class="global-controls"><button id="globalPlayPause" class="primary" type="button">▶ Play</button></div>
+
+
+<section id="sineLab" class="panel active">
+  <div class="concept-line"><span>ROTATION</span><strong>→</strong><span>WAVE</span><strong>→</strong><span>FUNCTION</span></div>
+  <div class="card">
+    <div class="section-kicker">01 / ROTATION</div>
+    <h2>One point. Three functions.</h2>
+    <p>Watch one rotation on the unit circle create <b>sine, cosine and tangent</b> from the same angle θ.</p>
+    <canvas id="sineLabCanvas" width="1000" height="760"></canvas>
+
+    <div class="controls">
+      <input id="sineAngle" type="range" min="0" max="360" step="0.1" value="0">
+      <input id="sineAngleNum" type="number" min="0" max="360" step="0.1" value="0">
+    </div>
+
+    <div class="row" style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button id="resetSine" type="button">↺ Reset</button>
+      <label style="display:flex;align-items:center;gap:8px;min-width:220px">
+        <span>Speed</span>
+        <input id="sineSpeed" type="range" min="0.25" max="3" step="0.25" value="1" style="flex:1">
+        <b id="sineSpeedValue">1×</b>
+      </label>
+    </div>
+
+    <div class="values">
+      <div class="value">θ<b id="sineDeg">0.0°</b></div>
+      <div class="value">Radians<b id="sineRad">0</b></div>
+      <div class="value">Arc length s<b id="sineArc">0.000</b></div>
+      <div class="value">sin θ<b id="sineSin">0.000</b></div>
+      <div class="value">cos θ<b id="sineCos">1.000</b></div>
+      <div class="value">P<b id="pointCoords">(1.000, 0.000)</b></div>
+    </div>
+
+    <div class="note">
+      <b>Watch the whole picture:</b> P moves around the circle. Its vertical coordinate generates the sine curve to the right, while its horizontal coordinate generates the cosine curve downward.
+    </div>
+  </div>
+</section>
+
+
+<section id="identity" class="panel">
+  <div class="section-kicker">02 / RELATIONSHIP</div>
+  <div class="concept-line"><span>RIGHT TRIANGLE</span><strong>→</strong><span>PYTHAGORAS</span><strong>→</strong><span>IDENTITY</span></div>
+  <h2>Why are sine and cosine connected?</h2>
+  <p>The unit circle and Pythagoras force a relationship between them.</p>
+  <div class="card">
+    <div class="mathline">Unit circle: <b>x² + y² = 1</b></div>
+    <canvas id="identityCanvas" width="700" height="500"></canvas>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <label style="display:flex;align-items:center;gap:8px">
+        <span>θ</span>
+        <input id="identityAngle" type="range" min="0" max="360" step="0.1" value="45">
+        <input id="identityAngleNum" type="number" min="0" max="360" step="0.1" value="45" style="width:80px">
+        <span>°</span>
+      </label>
+    </div>
+    <div class="identity-equation">
+      <div><b>P = (cos θ, sin θ)</b></div>
+      <div class="identity-values">
+        <span>(cos θ)² = <b id="cos2">0.500</b></span>
+        <span>(sin θ)² = <b id="sin2">0.500</b></span>
+      </div>
+      <div class="identity-final">
+        <b>(cos θ)² + (sin θ)² = <span id="sum2">1.000</span></b>
+      </div>
+      <div class="identity-box"><b>sin²θ + cos²θ = 1</b></div>
+    </div>
+  </div>
+</section>
+
+<section id="transform" class="panel">
+  <div class="section-kicker">03 / MOTION</div>
+  <h2>Change the motion. Watch the wave change.</h2>
+  <p>Radius changes amplitude. Speed changes frequency. Starting angle changes phase.</p>
+
+  <div class="concept-line"><span>RADIUS</span><strong>+</strong><span>SPEED</span><strong>+</strong><span>PHASE</span><strong>→</strong><span>NEW WAVE</span></div>
+  <div class="card">
+    <canvas id="motionCanvas" width="1000" height="610"></canvas>
+
+    <div class="controls" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <label style="display:flex;align-items:center;gap:8px">
+        <span>Radius R</span>
+        <input id="motionR" type="range" min="0.5" max="2" step="0.05" value="1">
+        <b id="motionRVal">1.00</b>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:8px">
+        <span>Rotation speed k</span>
+        <input id="motionK" type="range" min="0.25" max="3" step="0.25" value="1">
+        <b id="motionKVal">1.00×</b>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:8px">
+        <span>Starting angle φ</span>
+        <input id="motionPhi" type="range" min="-180" max="180" step="1" value="0">
+        <b id="motionPhiVal">0°</b>
+      </label>
+
+      <button id="motionReset" type="button">↺ Reset</button>
+    </div>
+
+    <div style="margin-top:14px;display:grid;gap:8px">
+      <div><b>Radius changes the amplitude:</b> &nbsp; y = R sin θ</div>
+      <div><b>Rotation speed changes the frequency:</b> &nbsp; y = R sin(kθ + φ)</div>
+      <div id="motionReadout" style="font-size:15px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="calculus" class="panel">
+  <div class="concept-line"><span>POSITION</span><strong>→</strong><span>TANGENT</span><strong>→</strong><span>SLOPE</span><strong>→</strong><span>DERIVATIVE</span></div>
+  <div class="calc-layout">
+    <div class="card calc-main">
+      <div class="calc-head">
+        <div>
+          <div class="section-kicker">04 / CHANGE</div>
+          <h2>How fast is the function changing?</h2>
+          <p>Move along the wave. The tangent line reveals the <b>instantaneous rate of change</b>.</p>
+        </div>
+        <div class="calc-function">
+          <label><input type="radio" name="calcFn" value="sin" checked> <b>y = sin θ</b></label>
+          <label><input type="radio" name="calcFn" value="cos"> <b>y = cos θ</b></label>
+          <label><input type="radio" name="calcFn" value="tan"> <b>y = tan θ</b></label>
+        </div>
+      </div>
+
+      <canvas id="calcMainCanvas" width="1000" height="650"></canvas>
+
+      <div class="calc-readouts">
+        <div class="value"><span>θ</span><b id="calcTheta">1.05 rad</b></div>
+        <div class="value"><span>Function value</span><b id="calcY">0.866</b></div>
+        <div class="value"><span>Instantaneous slope</span><b id="calcSlope">0.500</b></div>
+      </div>
+
+      <div class="controls">
+        <input id="calcThetaSlider" type="range" min="0" max="360" step="0.1" value="60">
+        <input id="calcThetaNum" type="number" min="0" max="360" step="0.1" value="60">
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="calcReset" type="button">↺ Reset</button>
+        
+      </div>
+    </div>
+
+    <div class="card calc-side">
+      <h2>What is changing?</h2>
+      <div class="step-card">
+        <span class="step-number">1</span>
+        <div><b>Position</b><br>Where is the point on the wave?</div>
+      </div>
+      <div class="step-card">
+        <span class="step-number">2</span>
+        <div><b>Tangent line</b><br>How steep is the curve at that point?</div>
+      </div>
+      <div class="step-card">
+        <span class="step-number">3</span>
+        <div><b>Rate of change</b><br>The tangent slope gives the instantaneous change.</div>
+      </div>
+
+      <div class="note">
+        <b>Watch the pattern.</b><br>
+        For sine, the slope changes exactly like cosine.
+      </div>
+
+      <div class="formula" id="calcDerivativeFormula">
+        <b>d/dθ (sin θ) = cos θ</b>
+      </div>
+
+      <div class="slope-note"><b>Lower graph:</b> the slope of the function at each θ — its instantaneous rate of change.</div>
+
+      <div class="note">
+        <b>The calculus idea:</b> the derivative tells us how fast a function is changing at each point.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Trigonometry for Calculus • Interactive exploration</footer>Draft 7 • Trigonometry for Calculus • Interactive exploration</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const d2r=d=>d*Math.PI/180;
+const niceRad=r=>{
+  const n=Math.round(r/Math.PI*12), den=12, g=(a,b)=>b?g(b,a%b):a, gg=g(Math.abs(n),den);
+  const a=n/gg,b=den/gg;
+  if(n===0)return "0";
+  if(b===1)return (a===1?"π":a===-1?"−π":a+"π");
+  return (a===1?"π":a===-1?"−π":a+"π")+"/"+b;
+};
+function clear(c){const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);return x}
+function circleBase(ctx,cx,cy,R){
+  ctx.strokeStyle="#172033";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.stroke();
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx-R-15,cy);ctx.lineTo(cx+R+15,cy);ctx.moveTo(cx,cy-R-15);ctx.lineTo(cx,cy+R+15);ctx.stroke();
+}
+
+let sineTrace = 0;
+let sinePlaying = false;
+let sineAnimationFrame = null;
+let sineLastTime = null;
+let sineSpeed = 1;
+const BASE_ANGULAR_SPEED = 2*Math.PI/8000; // one revolution ≈ 8 s at 1×
+
+function drawSineLab(){
+  const c=$("sineLabCanvas"),ctx=clear(c);
+  const w=c.width,h=c.height;
+
+  // The entire visual is organized around the unit circle.
+  const cx=230, cy=245, R=145;
+
+  // Sine graph extends to the right of the circle.
+  const sx0=cx+R+70, sx1=w-35, sy0=cy, samp=R;
+  const sineWidth=sx1-sx0;
+  const sx=t=>sx0+(t/(2*Math.PI))*sineWidth;
+  const sy=v=>sy0-samp*v;
+
+  // Cosine graph extends downward from the circle.
+  const cx0=cx, cy0=cy+R+75, cy1=h-35, camp=R;
+  const cosineHeight=cy1-cy0;
+  const cyTheta=t=>cy0+(t/(2*Math.PI))*cosineHeight;
+  const cxVal=v=>cx0+camp*v;
+
+  const a=d2r(sineTrace);
+  const s=Math.sin(a), co=Math.cos(a);
+  const px=cx+R*co, py=cy-R*s;
+
+  // ---------------- CIRCLE ----------------
+  circleBase(ctx,cx,cy,R);
+
+  // radius
+  ctx.strokeStyle="#172033";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+
+  // arc for increasing mathematical theta: canvas uses y-down, so use -a with anticlockwise=true
+  if(a>0.001){
+    ctx.strokeStyle="#172033";ctx.lineWidth=6;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,-a,true);ctx.stroke();
+  }
+
+  // angle theta
+  ctx.strokeStyle="#697386";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,36,0,-a,true);ctx.stroke();
+
+  // projections
+  ctx.setLineDash([7,5]);ctx.strokeStyle="#697386";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(cx,py);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // P
+  ctx.fillStyle="#172033";
+  ctx.beginPath();ctx.arc(px,py,9,0,2*Math.PI);ctx.fill();
+
+  ctx.font="bold 18px Arial";ctx.fillText("P",px+12,py-12);
+  ctx.font="15px Arial";ctx.fillText("r = 1",cx+R*.38,cy-R*.38);
+  if(a>0.08)ctx.fillText("s",cx+R*.52*Math.cos(a/2)-4,cy-R*.52*Math.sin(a/2)-5);
+  ctx.fillText("θ",cx+45*Math.cos(a/2),cy-45*Math.sin(a/2));
+
+  ctx.font="bold 17px Arial";ctx.fillText("UNIT CIRCLE",cx-62,30);
+
+  // ---------------- SINE GRAPH TO RIGHT ----------------
+  ctx.font="bold 17px Arial";ctx.fillText("SINE:  sin θ",sx0,30);
+
+  // graph axes
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(sx0,sy0);ctx.lineTo(sx1,sy0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx0,sy0-R-15);ctx.lineTo(sx0,sy0+R+15);ctx.stroke();
+
+  ctx.font="14px Arial";ctx.fillStyle="#697386";
+  ctx.fillText("1",sx0-20,sy(1)+5);
+  ctx.fillText("0",sx0-20,sy(0)+5);
+  ctx.fillText("−1",sx0-25,sy(-1)+5);
+
+  // full sine path in light grey
+  ctx.strokeStyle="#c9ced7";ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<=700;i++){
+    const t=2*Math.PI*i/700;
+    const xx=sx(t),yy=sy(Math.sin(t));
+    i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // generated sine path
+  ctx.strokeStyle="#172033";ctx.lineWidth=4;
+  ctx.beginPath();
+  for(let i=0;i<=600;i++){
+    const t=a*i/600;
+    const xx=sx(t),yy=sy(Math.sin(t));
+    i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // Horizontal connector from P to sine point.
+  // The sine point has exactly P's vertical coordinate.
+  const sineX=sx(a), sineY=sy(s);
+  ctx.setLineDash([8,5]);ctx.strokeStyle="#172033";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(sineX,sineY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle="#172033";
+  ctx.beginPath();ctx.arc(sineX,sineY,8,0,2*Math.PI);ctx.fill();
+
+  // theta labels along sine axis
+  ctx.fillStyle="#697386";
+  ctx.fillText("0",sx(0)-3,sy0+25);
+  ctx.fillText("π/2",sx(Math.PI/2)-12,sy0+25);
+  ctx.fillText("π",sx(Math.PI)-5,sy0+25);
+  ctx.fillText("3π/2",sx(3*Math.PI/2)-15,sy0+25);
+  ctx.fillText("2π",sx(2*Math.PI)-10,sy0+25);
+  ctx.fillText("θ",sx1-10,sy0+25);
+
+  // ---------------- TANGENT GRAPH BELOW SINE ----------------
+  const tx0=sx0, tx1=sx1, ty0=530, tAmp=42, tTop=450, tBottom=735;
+  const tx=t=>tx0+(t/(2*Math.PI))*(tx1-tx0);
+  const ty=v=>ty0-tAmp*v;
+
+  ctx.font="bold 17px Arial";ctx.fillStyle="#172033";
+  ctx.fillText("TANGENT:  tan θ",tx0,420);
+
+  // tangent axes
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx0,ty0);ctx.lineTo(tx1,ty0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tx0,tTop);ctx.lineTo(tx0,tBottom);ctx.stroke();
+
+  // asymptotes at π/2 and 3π/2
+  ctx.setLineDash([7,6]);ctx.strokeStyle="#a0a7b3";
+  [Math.PI/2,3*Math.PI/2].forEach(t=>{
+    ctx.beginPath();ctx.moveTo(tx(t),tTop);ctx.lineTo(tx(t),tBottom);ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // full tangent curve
+  ctx.strokeStyle="#c9ced7";ctx.lineWidth=2;
+  ctx.beginPath();
+  let tf=true;
+  for(let i=0;i<=1000;i++){
+    const t=2*Math.PI*i/1000;
+    const v=Math.tan(t);
+    if(Math.abs(v)>5){tf=true;continue}
+    const xx=tx(t),yy=ty(v);
+    if(tf){ctx.moveTo(xx,yy);tf=false}else ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // generated tangent curve
+  ctx.strokeStyle="#9333ea";ctx.lineWidth=4;
+  ctx.beginPath();
+  tf=true;
+  for(let i=0;i<=800;i++){
+    const t=a*i/800;
+    const v=Math.tan(t);
+    if(Math.abs(v)>5){tf=true;continue}
+    const xx=tx(t),yy=ty(v);
+    if(tf){ctx.moveTo(xx,yy);tf=false}else ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // Current tangent point, driven by the same P
+  const tv=Math.tan(a);
+  if(Math.abs(tv)<=5){
+    const tpx=tx(a),tpy=ty(tv);
+    ctx.fillStyle="#9333ea";
+    ctx.beginPath();ctx.arc(tpx,tpy,8,0,2*Math.PI);ctx.fill();
+    ctx.setLineDash([7,5]);ctx.strokeStyle="#697386";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(tpx,tpy);ctx.lineTo(tpx,ty0);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.font="14px Arial";ctx.fillStyle="#697386";
+  ctx.fillText("0",tx(0)-4,ty0+22);
+  ctx.fillText("π/2",tx(Math.PI/2)-12,ty0+22);
+  ctx.fillText("π",tx(Math.PI)-5,ty0+22);
+  ctx.fillText("3π/2",tx(3*Math.PI/2)-15,ty0+22);
+  ctx.fillText("2π",tx(2*Math.PI)-10,ty0+22);
+  ctx.fillText("tan θ = sin θ / cos θ",tx0+250,ty0+48);
+
+  // ---------------- COSINE GRAPH BELOW CIRCLE ----------------
+  ctx.font="bold 17px Arial";ctx.fillStyle="#172033";
+  ctx.fillText("COSINE:  cos θ",cx0-65,cy0-25);
+
+  // vertical theta axis
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx0,cy0);ctx.lineTo(cx0,cy1);ctx.stroke();
+
+  // horizontal value axis
+  ctx.beginPath();ctx.moveTo(cx0-camp-15,cy0);ctx.lineTo(cx0+camp+15,cy0);ctx.stroke();
+
+  ctx.font="14px Arial";ctx.fillStyle="#697386";
+  ctx.fillText("1",cx0+camp+8,cy0+5);
+  ctx.fillText("0",cx0+8,cy0+18);
+  ctx.fillText("−1",cx0-camp-30,cy0+5);
+
+  // full cosine path: theta increases DOWNWARD
+  ctx.strokeStyle="#c9ced7";ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<=700;i++){
+    const t=2*Math.PI*i/700;
+    const xx=cxVal(Math.cos(t)),yy=cyTheta(t);
+    i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // generated cosine path
+  ctx.strokeStyle="#16a34a";ctx.lineWidth=4;
+  ctx.beginPath();
+  for(let i=0;i<=600;i++){
+    const t=a*i/600;
+    const xx=cxVal(Math.cos(t)),yy=cyTheta(t);
+    i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+
+  // Vertical connector from P downward to cosine point.
+  // The cosine point uses P's horizontal coordinate.
+  const cosX=cxVal(co), cosY=cyTheta(a);
+  ctx.setLineDash([8,5]);ctx.strokeStyle="#697386";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,cosY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // horizontal transfer from circle to graph point at the current theta
+  ctx.setLineDash([5,5]);ctx.strokeStyle="#a0a7b3";
+  ctx.beginPath();ctx.moveTo(cx,cosY);ctx.lineTo(cosX,cosY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle="#16a34a";
+  ctx.beginPath();ctx.arc(cosX,cosY,8,0,2*Math.PI);ctx.fill();
+
+  // theta marks on vertical axis
+  ctx.fillStyle="#697386";
+  ctx.fillText("0",cx0+8,cyTheta(0)+18);
+  ctx.fillText("π/2",cx0+8,cyTheta(Math.PI/2)+5);
+  ctx.fillText("π",cx0+8,cyTheta(Math.PI)+5);
+  ctx.fillText("3π/2",cx0+8,cyTheta(3*Math.PI/2)+5);
+  ctx.fillText("2π",cx0+8,cyTheta(2*Math.PI)+5);
+  ctx.fillText("θ",cx0+22,cy1-5);
+
+  // Values
+  $("sineDeg").textContent=sineTrace.toFixed(1)+"°";
+  $("sineRad").textContent=niceRad(a);
+  $("sineArc").textContent=a.toFixed(3);
+  $("sineSin").textContent=s.toFixed(3);
+  $("sineCos").textContent=co.toFixed(3);
+  $("pointCoords").textContent=`(${co.toFixed(3)}, ${s.toFixed(3)})`;
+}
+
+$("sineAngle").oninput=()=>{
+  sineTrace=+$("sineAngle").value;
+  $("sineAngleNum").value=sineTrace.toFixed(1);
+  drawSineLab();
+};
+
+$("sineAngleNum").oninput=()=>{
+  sineTrace=Math.max(0,Math.min(360,+$("sineAngleNum").value||0));
+  $("sineAngle").value=sineTrace;
+  drawSineLab();
+};
+
+function animateSineFrame(time){
+  if(!sinePlaying)return;
+  if(sineLastTime===null)sineLastTime=time;
+  const dt=Math.min(50,time-sineLastTime);
+  sineLastTime=time;
+  sineTrace += (BASE_ANGULAR_SPEED*dt*sineSpeed)*180/Math.PI;
+  if(sineTrace>=360)sineTrace-=360;
+  $("sineAngle").value=sineTrace;
+  $("sineAngleNum").value=sineTrace.toFixed(1);
+  drawSineLab();
+  sineAnimationFrame=requestAnimationFrame(animateSineFrame);
+}
+
+function playSine(){
+  if(sinePlaying)return;
+  sinePlaying=true;
+  sineLastTime=null;
+  sineAnimationFrame=requestAnimationFrame(animateSineFrame);
+}
+function pauseSine(){
+  sinePlaying=false;
+  sineLastTime=null;
+  if(sineAnimationFrame!==null)cancelAnimationFrame(sineAnimationFrame);
+  sineAnimationFrame=null;
+  drawSineLab();
+}
+
+$("resetSine").onclick=()=>{
+  pauseSine();
+  sineTrace=0;
+  $("sineAngle").value=0;
+  $("sineAngleNum").value="0.0";
+  drawSineLab();
+};
+
+$("sineSpeed").oninput=()=>{
+  sineSpeed=+$("sineSpeed").value;
+  $("sineSpeedValue").textContent=sineSpeed+"×";
+};
+
+function drawIdentity(){
+  const c=$("identityCanvas"),ctx=clear(c);
+  const deg=Math.max(0,Math.min(360,+$("identityAngle").value||0));
+  const a=d2r(deg);
+  const cx=250,cy=250,R=180;
+
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(45,cy);ctx.lineTo(455,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,55);ctx.lineTo(cx,445);ctx.stroke();
+
+  ctx.strokeStyle="#172033";ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.stroke();
+
+  const px=cx+R*Math.cos(a), py=cy-R*Math.sin(a);
+
+  ctx.strokeStyle="#2563eb";ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,cy);ctx.stroke();
+
+  ctx.strokeStyle="#16a34a";ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(px,cy);ctx.lineTo(px,py);ctx.stroke();
+
+  ctx.strokeStyle="#9333ea";ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+
+  ctx.fillStyle="#172033";
+  ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);ctx.fill();
+  ctx.font="bold 18px Arial";ctx.fillText("P",px+10,py-10);
+
+  ctx.strokeStyle="#172033";ctx.lineWidth=2;
+  const q=14;
+  ctx.beginPath();ctx.moveTo(px-q,cy);ctx.lineTo(px-q,cy-q);ctx.lineTo(px,cy-q);ctx.stroke();
+
+  ctx.font="bold 16px Arial";
+  ctx.fillStyle="#2563eb";ctx.fillText("cos θ",cx+(px-cx)/2-25,cy+28);
+
+  ctx.fillStyle="#16a34a";
+  ctx.save();ctx.translate(px+30,cy+(py-cy)/2+20);ctx.rotate(-Math.PI/2);ctx.fillText("sin θ",0,0);ctx.restore();
+
+  ctx.fillStyle="#9333ea";
+  ctx.fillText("1",((cx+px)/2)-5,((cy+py)/2)-10);
+
+  ctx.strokeStyle="#697386";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,42,-a,0,false);ctx.stroke();
+  ctx.fillStyle="#697386";ctx.font="15px Arial";
+  ctx.fillText("θ",cx+48*Math.cos(a/2)-5,cy-48*Math.sin(a/2));
+
+  ctx.fillStyle="#172033";ctx.font="bold 16px Arial";
+  ctx.fillText("P = (cos θ, sin θ)",485,115);
+  ctx.font="15px Arial";
+  ctx.fillText("Horizontal leg = cos θ",485,155);
+  ctx.fillText("Vertical leg = sin θ",485,185);
+  ctx.fillText("Radius = 1",485,215);
+  ctx.font="bold 18px Arial";
+  ctx.fillText("(cos θ)² + (sin θ)² = 1²",465,285);
+  ctx.font="15px Arial";
+  ctx.fillText("This is Pythagoras applied",465,325);
+  ctx.fillText("to the right triangle.",465,350);
+
+  const sv=Math.sin(a),co=Math.cos(a);
+  $("sin2").textContent=(sv*sv).toFixed(3);
+  $("cos2").textContent=(co*co).toFixed(3);
+  $("sum2").textContent=(sv*sv+co*co).toFixed(3);
+}
+
+$("identityAngle").oninput=()=>{
+  $("identityAngleNum").value=$("identityAngle").value;
+  drawIdentity();
+};
+$("identityAngleNum").oninput=()=>{
+  const v=Math.max(0,Math.min(360,+$("identityAngleNum").value||0));
+  $("identityAngle").value=v;
+  drawIdentity();
+};
+
+let motionR=1, motionK=1, motionPhi=0, motionTheta=0;
+let motionPlaying=false, motionFrame=null, motionLast=null;
+
+function drawMotion(){
+  const c=$("motionCanvas"),ctx=clear(c),w=c.width,h=c.height;
+
+  // R controls the actual radius of the rotating point.
+  const baseR=90, circleR=baseR*motionR;
+  const cx=155,cy=190;
+
+  // Graph scale: 1 unit = baseR pixels.
+  const graphX0=350,graphX1=945,graphY=190,graphScale=baseR;
+
+  ctx.fillStyle="#172033";ctx.font="bold 18px Arial";
+  ctx.fillText("Change the motion and watch the wave",30,30);
+
+  // ---------------- CIRCLE ----------------
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx-circleR-20,cy);ctx.lineTo(cx+circleR+20,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-circleR-20);ctx.lineTo(cx,cy+circleR+20);ctx.stroke();
+
+  ctx.strokeStyle="#172033";ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(cx,cy,circleR,0,2*Math.PI);ctx.stroke();
+
+  // The actual angle of P.
+  const a=motionPhi*Math.PI/180 + motionTheta*motionK;
+
+  const px=cx+circleR*Math.cos(a);
+  const py=cy-circleR*Math.sin(a);
+
+  // Radius OP
+  ctx.strokeStyle="#2563eb";ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+
+  ctx.fillStyle="#2563eb";
+  ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);ctx.fill();
+  ctx.fillStyle="#172033";ctx.font="bold 16px Arial";
+  ctx.fillText("P",px+10,py-10);
+
+  ctx.font="14px Arial";
+  ctx.fillText("R = "+motionR.toFixed(2),cx-25,cy+circleR+40);
+
+  // ---------------- GRAPH ----------------
+  ctx.fillStyle="#172033";ctx.font="bold 17px Arial";
+  ctx.fillText("y = R sin(kθ + φ)",graphX0,65);
+
+  // Original/reference sine wave: R=1, k=1, φ=0.
+  // It never changes, so students can compare every modified wave against it.
+  ctx.strokeStyle="#c7cbd3";ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<=900;i++){
+    const t=4*Math.PI*i/900;
+    const x=graphX0+(t/(4*Math.PI))*(graphX1-graphX0);
+    const y=graphY-graphScale*Math.sin(t);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Axes and ±1 reference lines.
+  ctx.strokeStyle="#b8c0cd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(graphX0,graphY);ctx.lineTo(graphX1,graphY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(graphX0,graphY-150);ctx.lineTo(graphX0,graphY+150);ctx.stroke();
+
+  ctx.setLineDash([6,6]);ctx.strokeStyle="#d7d9df";
+  ctx.beginPath();ctx.moveTo(graphX0,graphY-graphScale);ctx.lineTo(graphX1,graphY-graphScale);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(graphX0,graphY+graphScale);ctx.lineTo(graphX1,graphY+graphScale);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Modified wave.
+  ctx.strokeStyle="#2563eb";ctx.lineWidth=4;
+  ctx.beginPath();
+  for(let i=0;i<=900;i++){
+    const t=4*Math.PI*i/900;
+    const x=graphX0+(t/(4*Math.PI))*(graphX1-graphX0);
+    const y=graphY-graphScale*motionR*Math.sin(motionK*t+motionPhi*Math.PI/180);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // IMPORTANT: the moving blue dot is placed using the EXACT SAME expression
+  // as the blue curve, so it always lies on the curve.
+  const graphTheta=motionTheta;
+  const graphYValue=motionR*Math.sin(motionK*graphTheta+motionPhi*Math.PI/180);
+  const dotX=graphX0+(graphTheta/(4*Math.PI))*(graphX1-graphX0);
+  const dotY=graphY-graphScale*graphYValue;
+
+  // Connection from P's vertical coordinate to the graph point.
+  ctx.setLineDash([7,5]);ctx.strokeStyle="#2563eb";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(dotX,dotY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle="#2563eb";
+  ctx.beginPath();ctx.arc(dotX,dotY,9,0,2*Math.PI);ctx.fill();
+
+  ctx.fillStyle="#697386";ctx.font="13px Arial";
+  ctx.fillText("+1",graphX0-28,graphY-graphScale+5);
+  ctx.fillText("0",graphX0-18,graphY+5);
+  ctx.fillText("−1",graphX0-28,graphY+graphScale+5);
+
+  // Comparison labels.
+  ctx.font="13px Arial";ctx.fillStyle="#697386";
+  ctx.fillText("Original:  y = sin θ",graphX0,430);
+  ctx.fillStyle="#2563eb";
+  ctx.fillText("Changed:   y = R sin(kθ + φ)",graphX0+180,430);
+
+  const displayTheta=((motionTheta*180/Math.PI)%360+360)%360;
+  $("motionReadout").textContent =
+    "θ = "+displayTheta.toFixed(1)+"°   |   y = "+graphYValue.toFixed(3);
+  $("motionRVal").textContent=motionR.toFixed(2);
+  $("motionKVal").textContent=motionK.toFixed(2)+"×";
+  $("motionPhiVal").textContent=motionPhi.toFixed(0)+"°";
+}
+
+$("motionR").oninput=()=>{
+  motionR=+$("motionR").value;
+  drawMotion();
+};
+$("motionK").oninput=()=>{
+  motionK=+$("motionK").value;
+  drawMotion();
+};
+$("motionPhi").oninput=()=>{
+  motionPhi=+$("motionPhi").value;
+  drawMotion();
+};
+
+function animateMotion(t){
+  if(!motionPlaying)return;
+  if(motionLast===null)motionLast=t;
+  const dt=Math.min(50,t-motionLast);
+  motionLast=t;
+  motionTheta += dt*2*Math.PI/8000;
+  if(motionTheta>=4*Math.PI)motionTheta-=4*Math.PI;
+  drawMotion();
+  motionFrame=requestAnimationFrame(animateMotion);
+}
+
+function playMotion(){
+  if(motionPlaying)return;
+  motionPlaying=true;
+  motionLast=null;
+  motionFrame=requestAnimationFrame(animateMotion);
+}
+function pauseMotion(){
+  motionPlaying=false;
+  motionLast=null;
+  if(motionFrame!==null)cancelAnimationFrame(motionFrame);
+  motionFrame=null;
+  drawMotion();
+}
+
+$("motionReset").onclick=()=>{
+  pauseMotion();
+  motionTheta=0;motionR=1;motionK=1;motionPhi=0;
+  $("motionR").value=1;$("motionK").value=1;$("motionPhi").value=0;
+  drawMotion();
+};
+
+
+let calcPlaying=false, calcFrame=null, calcLast=null, calcAngle=60;
+let calcFn="sin";
+
+function calcValue(a){
+  if(calcFn==="sin") return Math.sin(a);
+  if(calcFn==="cos") return Math.cos(a);
+  return Math.tan(a);
+}
+function calcDerivative(a){
+  if(calcFn==="sin") return Math.cos(a);
+  if(calcFn==="cos") return -Math.sin(a);
+  return 1/(Math.cos(a)*Math.cos(a));
+}
+function calcFnLabel(){
+  return calcFn==="sin" ? "sin θ" : calcFn==="cos" ? "cos θ" : "tan θ";
+}
+function calcDerivativeText(){
+  return calcFn==="sin" ? "d/dθ (sin θ) = cos θ" :
+         calcFn==="cos" ? "d/dθ (cos θ) = −sin θ" :
+         "d/dθ (tan θ) = sec² θ";
+}
+
+
+function drawCalc(){
+  const c=$("calcMainCanvas"),ctx=clear(c),w=c.width,h=c.height;
+  const L=58,R=25,top=42,gap=55;
+  const topH=285,bottomTop=top+topH+gap,bottomH=220;
+  const xmin=0,xmax=2*Math.PI;
+
+  const X=x=>(x-xmin)/(xmax-xmin)*(w-L-R)+L;
+  const YTop=y=>top+(1.35-y)/(2.7)*topH;
+  const YBottom=y=>bottomTop+(1.2-y)/(2.4)*bottomH;
+
+  // Section titles
+  ctx.fillStyle="#172033";
+  ctx.font="bold 21px Arial";
+  ctx.fillText("Function + tangent line",L,25);
+  ctx.fillText("Slope (rate of change)",L,bottomTop-25);
+
+  // Shared vertical guides/grid
+  ctx.strokeStyle="#e5e9ef";ctx.lineWidth=1;
+  for(let i=0;i<=8;i++){
+    const x=i*Math.PI/4;
+    ctx.beginPath();ctx.moveTo(X(x),top);ctx.lineTo(X(x),bottomTop+bottomH);ctx.stroke();
+  }
+  for(const yy of [-1,0,1]){
+    ctx.beginPath();ctx.moveTo(L,YTop(yy));ctx.lineTo(w-R,YTop(yy));ctx.stroke();
+  }
+  for(const yy of [-1,0,1]){
+    ctx.beginPath();ctx.moveTo(L,YBottom(yy));ctx.lineTo(w-R,YBottom(yy));ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle="#172033";ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.moveTo(L,YTop(0));ctx.lineTo(w-R,YTop(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(L,YBottom(0));ctx.lineTo(w-R,YBottom(0));ctx.stroke();
+
+  // Main function curve
+  const seriesColor=calcFn==="sin"?"#2563eb":calcFn==="cos"?"#16a34a":"#9333ea";
+  ctx.strokeStyle=seriesColor;ctx.lineWidth=4;ctx.beginPath();
+  let started=false;
+  for(let i=0;i<1000;i++){
+    const x=xmin+(xmax-xmin)*i/999,v=calcValue(x);
+    if(Math.abs(v)>1.34){started=false;continue;}
+    const px=X(x),py=YTop(v);
+    if(!started){ctx.moveTo(px,py);started=true}else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  const a=d2r(calcAngle), y=calcValue(a), m=calcDerivative(a);
+  const px=X(a),py=YTop(y);
+
+  // Tangent line
+  const tangentSpan=calcFn==="tan"?0.38:0.75;
+  const tx0=a-tangentSpan,tx1=a+tangentSpan;
+  ctx.strokeStyle="#16a34a";ctx.lineWidth=3;ctx.setLineDash([8,6]);
+  ctx.beginPath();
+  ctx.moveTo(X(tx0),YTop(y+m*(tx0-a)));
+  ctx.lineTo(X(tx1),YTop(y+m*(tx1-a)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Point + vertical guide
+  ctx.strokeStyle="#9aa5b5";ctx.lineWidth=1.4;ctx.setLineDash([5,5]);
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,YTop(0));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="#9333ea";ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);ctx.fill();
+
+  // Main graph labels
+  ctx.fillStyle="#172033";ctx.font="bold 17px Arial";
+  ctx.fillText("y = "+calcFnLabel(),L+8,top+21);
+  ctx.font="13px Arial";
+  ctx.fillText("0",L-18,YTop(0)+4);
+  ctx.fillText("π/2",X(Math.PI/2)-12,YTop(0)+20);
+  ctx.fillText("π",X(Math.PI)-5,YTop(0)+20);
+  ctx.fillText("3π/2",X(3*Math.PI/2)-16,YTop(0)+20);
+  ctx.fillText("2π",X(2*Math.PI)-10,YTop(0)+20);
+  ctx.fillText("θ",w-R-5,YTop(0)-7);
+
+  // Slope graph
+  // For tan(theta), sec²(theta) is always >= 1 and grows without bound
+  // near π/2 and 3π/2. The old ±1.17 clipping hid almost the entire curve.
+  const slopeMax = calcFn==="tan" ? 6 : 1.15;
+  const slopeMin = calcFn==="tan" ? 0 : -1.15;
+  const YSlope = v => bottomTop + (slopeMax-v)/(slopeMax-slopeMin)*bottomH;
+
+  ctx.strokeStyle="#e5e9ef";ctx.lineWidth=1;
+  for(const yy of calcFn==="tan" ? [1,2,4,6] : [-1,0,1]){
+    ctx.beginPath();ctx.moveTo(L,YSlope(yy));ctx.lineTo(w-R,YSlope(yy));ctx.stroke();
+  }
+  ctx.strokeStyle="#172033";ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.moveTo(L,YSlope(0));ctx.lineTo(w-R,YSlope(0));ctx.stroke();
+
+  ctx.strokeStyle="#9333ea";ctx.lineWidth=3.5;ctx.beginPath();
+  started=false;
+  for(let i=0;i<1600;i++){
+    const x=xmin+(xmax-xmin)*i/1599;
+    const v=calcDerivative(x);
+    if(!Number.isFinite(v) || v<slopeMin || v>slopeMax){
+      started=false;continue;
+    }
+    const qx=X(x),qy=YSlope(v);
+    if(!started){ctx.moveTo(qx,qy);started=true}else ctx.lineTo(qx,qy);
+  }
+  ctx.stroke();
+
+  const slopeNow=calcDerivative(a);
+  if(Number.isFinite(slopeNow) && slopeNow>=slopeMin && slopeNow<=slopeMax){
+    ctx.fillStyle="#9333ea";ctx.beginPath();ctx.arc(X(a),YSlope(slopeNow),7,0,2*Math.PI);ctx.fill();
+  }
+
+  ctx.fillStyle="#172033";ctx.font="bold 16px Arial";
+  ctx.fillText("slope of "+calcFnLabel(),L+8,bottomTop+21);
+  ctx.font="13px Arial";
+  if(calcFn==="tan"){
+    ctx.fillText("1",L-16,YSlope(1)+4);
+    ctx.fillText("2",L-16,YSlope(2)+4);
+    ctx.fillText("4",L-16,YSlope(4)+4);
+    ctx.fillText("6",L-16,YSlope(6)+4);
+  }else{
+    ctx.fillText("−1",L-23,YSlope(-1)+4);
+    ctx.fillText("0",L-16,YSlope(0)+4);
+    ctx.fillText("1",L-16,YSlope(1)+4);
+  }
+  ctx.fillText("θ",w-R-5,YSlope(0)-7);
+
+  $("calcTheta").textContent=a.toFixed(2)+" rad ("+calcAngle.toFixed(1)+"°)";
+  $("calcY").textContent=Number.isFinite(y)?y.toFixed(3):"undefined";
+  $("calcSlope").textContent=Number.isFinite(m)?m.toFixed(3):"very large";
+  $("calcDerivativeFormula").innerHTML="<b>"+calcDerivativeText()+"</b>";
+}
+
+$("calcThetaSlider").oninput=()=>{
+  calcAngle=+$("calcThetaSlider").value;
+  $("calcThetaNum").value=calcAngle.toFixed(1);
+  drawCalc();
+};
+$("calcThetaNum").oninput=()=>{
+  calcAngle=Math.max(0,Math.min(360,+$("calcThetaNum").value||0));
+  $("calcThetaSlider").value=calcAngle;
+  drawCalc();
+};
+document.querySelectorAll('input[name="calcFn"]').forEach(r=>{
+  r.onchange=()=>{
+    calcFn=r.value;
+    drawCalc();
+  };
+});
+$("calcReset").onclick=()=>{
+  pauseCalc();
+  calcAngle=60;
+  calcFn="sin";
+  document.querySelector('input[name="calcFn"][value="sin"]').checked=true;
+  $("calcThetaSlider").value=60;
+  $("calcThetaNum").value="60.0";
+  drawCalc();
+};
+
+function animateCalc(t){
+  if(!calcPlaying)return;
+  if(calcLast===null)calcLast=t;
+  const dt=Math.min(50,t-calcLast);calcLast=t;
+  calcAngle += dt*360/8000;
+  if(calcAngle>360)calcAngle-=360;
+  $("calcThetaSlider").value=calcAngle;
+  $("calcThetaNum").value=calcAngle.toFixed(1);
+  drawCalc();
+  calcFrame=requestAnimationFrame(animateCalc);
+}
+function playCalc(){
+  if(calcPlaying)return;
+  calcPlaying=true;calcLast=null;
+  calcFrame=requestAnimationFrame(animateCalc);
+}
+function pauseCalc(){
+  calcPlaying=false;calcLast=null;
+  if(calcFrame!==null)cancelAnimationFrame(calcFrame);
+  calcFrame=null;
+  drawCalc();
+}
+
+// Active tab determines whether the single Play/Pause control is shown
+// and which animation it controls.
+let activeTab="sineLab";
+function updateGlobalPlayPause(){
+  const visible = activeTab==="sineLab" || activeTab==="transform" || activeTab==="calculus";
+  $("globalControls").style.display=visible?"flex":"none";
+  const playing = activeTab==="sineLab" ? sinePlaying :
+                  activeTab==="transform" ? motionPlaying : calcPlaying;
+  $("globalPlayPause").textContent=playing?"⏸ Pause":"▶ Play";
+}
+$("globalPlayPause").onclick=()=>{
+  if(activeTab==="sineLab"){
+    if(sinePlaying)pauseSine();else playSine();
+  }else if(activeTab==="transform"){
+    if(motionPlaying)pauseMotion();else playMotion();
+  }else if(activeTab==="calculus"){
+    if(calcPlaying)pauseCalc();else playCalc();
+  }
+  updateGlobalPlayPause();
+};
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");$(b.dataset.tab).classList.add("active");
+  activeTab=b.dataset.tab;
+  updateGlobalPlayPause();
+});
+
+function syncGlobalButton(){
+  updateGlobalPlayPause();
+  requestAnimationFrame(syncGlobalButton);
+}
+
+drawSineLab(); drawIdentity(); drawMotion(); drawCalc();
+syncGlobalButton();
+
+</script>
+</body>
+</html>
