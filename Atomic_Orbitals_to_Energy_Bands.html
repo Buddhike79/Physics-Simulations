@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atomic Orbitals to Energy Bands — Interactive Lab</title>
+<style>
+:root{--bg:#07111f;--panel:#101e31;--panel2:#14263d;--line:#29415e;--text:#edf5ff;--muted:#a9bdd5;--cyan:#55d9f4;--gold:#ffd166;--pink:#ff7aa2;--green:#74e0a3}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#11243b,#07111f 65%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:22px 24px 14px;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;text-align:right}.credit{font-size:12px;color:var(--muted);white-space:nowrap}
+h1{font-size:clamp(22px,3vw,32px);margin:0;letter-spacing:-.6px}header p{color:var(--muted);margin:5px 0 0;max-width:760px}
+.pill{border:1px solid #34617e;color:#aeefff;border-radius:999px;padding:6px 11px;font-size:12px;white-space:nowrap}
+main{padding:18px;max-width:1500px;margin:auto}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+button,select,input{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--text);background:#14263d}
+button:hover{border-color:var(--cyan)}button.active{background:#16435a;border-color:var(--cyan);color:#e9fbff}
+.layout{display:grid;grid-template-columns:minmax(270px,350px) minmax(0,1fr);gap:16px}
+.panel{background:linear-gradient(145deg,rgba(18,34,55,.97),rgba(12,25,42,.97));border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.panel h2{font-size:17px;margin:0 0 12px}.panel h3{font-size:14px;margin:16px 0 7px;color:#d7e8fa}
+.control{margin:13px 0}.control label{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px;margin-bottom:6px}.control strong{color:var(--text)}
+select,input[type=range]{width:100%;accent-color:var(--cyan)}select{background:#0b1727;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+.small{font-size:12px;color:var(--muted)}.note{padding:10px 12px;border-left:3px solid var(--gold);background:#29271f;border-radius:0 8px 8px 0;font-size:13px;color:#f5e5b8;margin-top:12px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.metric{background:#0b1727;border:1px solid var(--line);border-radius:10px;padding:10px}.metric .num{font-size:21px;font-weight:700}.metric .lbl{font-size:11px;color:var(--muted)}
+.visual-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:14px}
+.view{position:relative;background:#050b14;border:1px solid #263a52;border-radius:12px;overflow:hidden;min-height:390px}
+#orbital3d{width:100%;height:390px;display:block}.view-title{position:absolute;left:12px;top:10px;font-size:12px;color:#b9d7f4;background:#091523c9;border:1px solid #263d57;padding:5px 8px;border-radius:7px;z-index:2}
+#energyCanvas,#bandCanvas{width:100%;display:block;background:#081321;border:1px solid #263a52;border-radius:12px}
+.caption{font-size:12px;color:var(--muted);margin:8px 2px 0}
+.occupancy{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.orbital-box{background:#0b1727;border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:12px;min-width:64px;text-align:center}.orbital-box b{display:block;color:#bceeff;margin-bottom:4px}.arrows{font-size:17px;letter-spacing:2px;color:var(--gold)}
+.band-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px}.callout{background:#0b1727;border:1px solid var(--line);border-radius:10px;padding:12px;margin:9px 0}.callout b{color:var(--cyan)}.callout p{margin:5px 0 0;font-size:13px;color:var(--muted)}
+footer{padding:16px 22px 28px;color:var(--muted);font-size:12px;max-width:1500px;margin:auto}
+@media(max-width:980px){.layout{grid-template-columns:1fr}.visual-grid{grid-template-columns:1fr}.band-layout{grid-template-columns:1fr}.view{min-height:340px}#orbital3d{height:340px}}
+</style>
+</head>
+<body>
+<header><div><h1>Atomic Orbitals → Energy Bands</h1><p>An interactive concept lab: explore orbital shapes, electron filling, changing atoms, and how many atoms form bands in a solid.</p></div><div class="header-right"><span class="pill">AL Physics · Electronics</span><span class="credit">Prepared by Buddhike Priyadarshana</span></div></header>
+<main>
+<div class="tabs">
+<button class="active" id="tabAtom">1 · One atom</button><button id="tabMany">2 · Many atoms → bands</button><button id="tabGuide">3 · Teaching guide</button>
+</div>
+<section id="atomPage">
+<div class="layout">
+<aside class="panel">
+<h2>Build an atom</h2>
+<div class="control"><label for="element">Element <strong id="elementLabel">Silicon (Si)</strong></label><select id="element">
+<option value="1">Hydrogen (H), Z = 1</option><option value="2">Helium (He), Z = 2</option><option value="3">Lithium (Li), Z = 3</option><option value="4">Beryllium (Be), Z = 4</option><option value="5">Boron (B), Z = 5</option><option value="6">Carbon (C), Z = 6</option><option value="7">Nitrogen (N), Z = 7</option><option value="8">Oxygen (O), Z = 8</option><option value="9">Fluorine (F), Z = 9</option><option value="10">Neon (Ne), Z = 10</option><option value="11">Sodium (Na), Z = 11</option><option value="12">Magnesium (Mg), Z = 12</option><option value="13">Aluminium (Al), Z = 13</option><option value="14" selected>Silicon (Si), Z = 14</option><option value="15">Phosphorus (P), Z = 15</option><option value="16">Sulfur (S), Z = 16</option><option value="17">Chlorine (Cl), Z = 17</option><option value="18">Argon (Ar), Z = 18</option></select></div>
+<div class="control"><label for="orbital">Occupied orbital to visualise <strong id="orbitalLabel">3p</strong></label><select id="orbital"><option>1s</option><option>2s</option><option>2p</option><option>3s</option><option selected>3p</option></select><p class="small" id="orbitalHelp">Only subshells containing electrons in the selected atom are available.</p></div>
+<div class="control"><label for="cloudView">Cloud display</label><select id="cloudView"><option value="single" selected>Selected orbital</option><option value="subshell">Occupied p orbitals only</option><option value="all">All occupied subshell clouds</option></select><p class="small">“All occupied” overlays the occupied s and p subshells for the selected atom.</p></div>
+<div class="control"><label for="cloud">Cloud / lobe opacity <strong id="cloudVal">0.72</strong></label><input id="cloud" type="range" min=".2" max="1" step=".04" value=".72"></div>
+<div class="control"><label for="scale">Orbital size <strong id="scaleVal">1.0×</strong></label><input id="scale" type="range" min=".65" max="1.5" step=".05" value="1"></div>
+<div class="metrics"><div class="metric"><div class="num" id="zVal">14</div><div class="lbl">Protons (Z)</div></div><div class="metric"><div class="num" id="eVal">14</div><div class="lbl">Electrons (neutral atom)</div></div><div class="metric"><div class="num" id="valVal">4</div><div class="lbl">Valence e⁻</div></div></div>
+<h3>Electron configuration</h3><div id="configuration" style="font-size:14px;line-height:1.8"></div>
+<h3>Pauli exclusion principle</h3>
+<div class="small">Each orbital holds at most <b>2 electrons</b>, and their spins must be opposite.</div>
+<div id="occupancy" class="occupancy"></div>
+<div class="note">Orbital clouds show probability shapes—not electron paths. The colour is used to distinguish the two signs (phases) of a p orbital wavefunction, not positive and negative electric charge.</div>
+</aside>
+<div class="panel">
+<div class="visual-grid">
+<div><div class="view"><div class="view-title">3D orbital model · drag to rotate</div><div id="orbital3d"></div></div><p class="caption" id="orbitalCaption">The 3p orbital has two lobes and one angular nodal plane.</p></div>
+<div><h2>Atomic energy levels</h2><canvas id="energyCanvas" width="560" height="390"></canvas><p class="caption">Each energy level is a horizontal line; vertical position represents energy. Positions are qualitative, not a precision atomic-structure calculation.</p><div class="callout"><b id="energyTitle">Why energy changes</b><p id="energyText">Changing nuclear charge and shielding changes orbital energies. Electrons fill the lowest available states, subject to Pauli exclusion and Hund's rule.</p></div></div>
+</div>
+</div>
+</div>
+</section>
+<section id="manyPage" style="display:none">
+<div class="panel">
+<h2>From separate atomic levels to bands in a solid</h2>
+<p class="small">Bring atoms closer together. Their electron wavefunctions overlap, and each atomic state splits into many closely spaced states. With an enormous number of atoms, these states form energy bands.</p>
+<div class="band-layout">
+<div><canvas id="bandCanvas" width="900" height="500"></canvas><p class="caption">Schematic band diagram, not to scale. Increase atom count to add closely spaced horizontal states; adjust spacing to change their energy spread.</p></div>
+<div>
+<div class="control"><label for="atoms">Number of atoms, N <strong id="atomsVal">8</strong></label><input id="atoms" type="range" min="1" max="1000" step="1" value="8"></div>
+<div class="control"><label for="spacing">Atom separation <strong id="spacingVal">Far apart</strong></label><input id="spacing" type="range" min="0" max="100" step="1" value="15"></div>
+<div class="control"><label for="material">Example solid <strong id="materialLabel">Silicon</strong></label><select id="material"><option value="metal">Metal (overlapping bands)</option><option value="semi" selected>Semiconductor (small gap)</option><option value="ins">Insulator (large gap)</option></select></div>
+<div class="metrics"><div class="metric"><div class="num" id="stateCount">16</div><div class="lbl">States shown (schematic)</div></div><div class="metric"><div class="num" id="gapVal">1.1 eV</div><div class="lbl">Illustrative band gap</div></div><div class="metric"><div class="num" id="fillVal">Half-filled</div><div class="lbl">Simplified filling</div></div></div>
+<div class="callout"><b>Valence band</b><p>In a semiconductor at 0 K, the valence band is full and the conduction band is empty in the ideal intrinsic case.</p></div>
+<div class="callout"><b>Conduction band</b><p>Electrons promoted across the band gap can occupy available states and contribute to electrical conduction.</p></div>
+<div class="note">The band picture is a teaching model. Real band structures depend on crystal structure and bonding; atomic orbital energies alone do not determine the full band structure.</div>
+</div>
+</div>
+</div>
+</section>
+<section id="guidePage" style="display:none">
+<div class="panel"><h2>Suggested classroom sequence</h2>
+<div class="callout"><b>1. Start with one atom</b><p>Select hydrogen, then silicon. Ask: what changed when the number of protons increased? Discuss nuclear attraction and electron shielding.</p></div>
+<div class="callout"><b>2. Count orbitals, not just shells</b><p>1s, 2s and 3s each contain one orbital (maximum 2 electrons). Each p subshell has three available orbitals (maximum 6 electrons), but only orbitals occupied by electrons are shown in the cloud view. Hund’s rule fills them singly before pairing.</p></div>
+<div class="callout"><b>3. Use Hund's rule too</b><p>For equal-energy p orbitals, electrons occupy separate orbitals with parallel spins before pairing. This explains the filling pattern in 2p and 3p.</p></div>
+<div class="callout"><b>4. Scale up to a solid</b><p>Increase N and reduce separation. Explain that one atomic level produces many allowed states. The collection of states forms bands, with a forbidden energy gap possible between valence and conduction bands.</p></div>
+<div class="note"><b>Important distinction:</b> Pauli exclusion is a rule for allowed electron states; it does not by itself create the band gap. Band formation comes from many atoms interacting in a periodic solid, and the gap depends on the material's electronic structure.</div>
+</div>
+</section>
+</main>
+<footer>Educational visualisation for conceptual learning. Orbital shapes are simplified probability-density surfaces. The energy ladder is qualitative and uses a simplified filling order; it is not intended for spectroscopy or quantitative predictions.</footer>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const symbols=['','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar'];
+const names=['','Hydrogen','Helium','Lithium','Beryllium','Boron','Carbon','Nitrogen','Oxygen','Fluorine','Neon','Sodium','Magnesium','Aluminium','Silicon','Phosphorus','Sulfur','Chlorine','Argon'];
+const subshells=[['1s',2],['2s',2],['2p',6],['3s',2],['3p',6]];
+let scene,camera,renderer,controls,orbitalGroup;
+function init3d(){
+ const host=$('orbital3d'); scene=new THREE.Scene();scene.background=new THREE.Color(0x050b14);
+ camera=new THREE.PerspectiveCamera(42,host.clientWidth/390,.1,100);camera.position.set(4.4,3.1,5.8);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,390);host.appendChild(renderer.domElement);
+ controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+ scene.add(new THREE.AmbientLight(0xffffff,.85));let light=new THREE.DirectionalLight(0xffffff,1.4);light.position.set(4,5,6);scene.add(light);
+ const grid=new THREE.GridHelper(5,10,0x28445d,0x142638);grid.position.y=-1.45;scene.add(grid);
+ const axes=new THREE.AxesHelper(1.7);scene.add(axes);
+ orbitalGroup=new THREE.Group();scene.add(orbitalGroup);
+ const nucleus=new THREE.Mesh(new THREE.SphereGeometry(.12,24,24),new THREE.MeshStandardMaterial({color:0xffd166,emissive:0x5c3000}));nucleus.position.set(0,0,0);scene.add(nucleus);
+ function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
+ window.addEventListener('resize',()=>{const w=host.clientWidth;camera.aspect=w/390;camera.updateProjectionMatrix();renderer.setSize(w,390)});
+}
+function makeOrbital(type,opacity,scale){
+ while(orbitalGroup.children.length) {const o=orbitalGroup.children.pop();o.geometry?.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}}
+ orbitalGroup.scale.setScalar(scale);
+ const mode=$('cloudView').value, z=+$('element').value, cfg=configFor(z);
+ const mat=(color,alpha=opacity)=>new THREE.MeshPhongMaterial({color,transparent:true,opacity:alpha,side:THREE.DoubleSide,shininess:60,depthWrite:false});
+ function sphere(r,c,alpha=opacity){const m=new THREE.Mesh(new THREE.SphereGeometry(r,36,28),mat(c,alpha));orbitalGroup.add(m)}
+ function pOrbital(n,axis,alpha=opacity){
+   const r=n===2?1.05:1.34;
+   for(const sign of [-1,1]){const m=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),mat(sign<0?0xff7aa2:0x55d9f4,alpha));m.scale.set(.48,r*.78,.48);m.position[axis]=sign*r*.72; if(axis==='x'){m.rotation.z=Math.PI/2;} if(axis==='z'){m.rotation.x=Math.PI/2;} orbitalGroup.add(m);}
+ }
+ function sOrbital(n,alpha=opacity){const r=n===1?.48:n===2?.78:1.03;sphere(r,0x55d9f4,alpha);if(n===2){sphere(r*.55,0x071321,Math.min(.95,alpha+.15));}if(n===3){sphere(r*.72,0x071321,Math.min(.95,alpha+.15));sphere(r*.48,0x55d9f4,alpha);sphere(r*.28,0x071321,Math.min(.95,alpha+.15));}}
+ if(mode==='all'){
+   // Layer occupied subshells from inner to outer; lower opacity keeps overlapping clouds legible.
+   cfg.filter(([name,count])=>count>0).forEach(([name,count],i)=>{const n=Number(name[0]),a=Math.max(.12,opacity*.34);if(name.endsWith('s'))sOrbital(n,a);else if(name.endsWith('p')){const occupiedCount=Math.min(3,Math.ceil(count/2));['x','y','z'].slice(0,occupiedCount).forEach(axis=>pOrbital(n,axis,a));}});
+ }else if(type.endsWith('s')) sOrbital(Number(type[0]));
+ else {const n=Number(type[0]);if(mode==='subshell'){const count=cfg.find(([name])=>name===type)?.[1]||0;const occupiedCount=Math.min(3,Math.ceil(count/2));['x','y','z'].slice(0,occupiedCount).forEach(axis=>pOrbital(n,axis));}else pOrbital(n,'y');}
+}
+function configFor(z){
+ let left=z,arr=[];for(const [name,cap] of subshells){let n=Math.min(cap,left);arr.push([name,n,cap]);left-=n;}
+ return arr;
+}
+function syncOrbitalChoices(z){
+ // Rebuild the list from this atom's actual electron configuration every time
+ // the element changes. Only subshells with at least one electron are selectable.
+ const select=$('orbital');
+ const previous=select.value;
+ const occupied=configFor(z).filter(([,count])=>count>0).map(([name])=>name);
+ select.replaceChildren();
+ for(const name of occupied){
+   const option=document.createElement('option');
+   option.value=name; option.textContent=name;
+   select.appendChild(option);
+ }
+ select.value=occupied.includes(previous)?previous:occupied[occupied.length-1];
+ // Also validate the display mode against the newly selected subshell.
+ const pOption=[...$('cloudView').options].find(o=>o.value==='subshell');
+ const isP=select.value.endsWith('p');
+ if(pOption) pOption.disabled=!isP;
+ if(!isP && $('cloudView').value==='subshell') $('cloudView').value='single';
+ $('orbitalHelp').textContent=`${names[z]} (${symbols[z]}): selectable occupied subshells — ${occupied.join(', ')}. Empty subshells are removed from the list.`;
+}
+function renderAtom(){
+ const z=+$('element').value; syncOrbitalChoices(z);
+ const orb=$('orbital').value,opacity=+$('cloud').value,scale=+$('scale').value;
+ $('elementLabel').textContent=`${names[z]} (${symbols[z]})`; $('zVal').textContent=z;$('eVal').textContent=z;
+ const cfg=configFor(z),val=Math.min(z-(z<=2?0:z<=10?2:10),8);$('valVal').textContent=(z<=2?z:z<=10?z-2:z<=18?z-10:0);
+ $('configuration').innerHTML=cfg.filter(x=>x[1]>0).map(x=>`${x[0]}<sup>${x[1]}</sup>`).join(' &nbsp; ');
+ $('occupancy').innerHTML=cfg.map(([name,n,cap])=>{let orbitals=name.endsWith('p')?3:1;let html=`<div class="orbital-box"><b>${name}</b>`;for(let i=0;i<orbitals;i++){let occ=Math.max(0,Math.min(2,n-i*2));html+=`<div class="arrows">${occ===0?'□':occ===1?'↑':'↑↓'}</div>`}return html+'</div>'}).join('');
+ $('orbitalLabel').textContent=orb;$('cloudVal').textContent=opacity.toFixed(2);$('scaleVal').textContent=scale.toFixed(2)+'×';
+ const desc={'1s':'Spherical probability cloud; no angular node.','2s':'Spherical orbital with one radial node (a spherical region of zero probability).','2p':'Two lobes separated by an angular nodal plane through the nucleus.','3s':'Spherical orbital with two radial nodes.','3p':'Two lobes with one radial nodal plane and a radial node.'};
+ const view=$('cloudView').value; $('orbitalCaption').textContent=(view==='all'?'Occupied electron clouds are overlaid; p orbitals are shown only where electrons occupy them, following Hund’s rule. Colours distinguish orbital phases, not charge.':view==='subshell'&&orb.endsWith('p')?`${orb}: showing only orbitals occupied by electrons, filled according to Hund’s rule (one electron in each orbital before pairing).`:desc[orb])+' Shape is schematic; exact radial probability is not drawn.';
+ $('energyTitle').textContent=`${names[z]}: Z = ${z}`;
+ $('energyText').textContent=z===1?'Hydrogen is the special case: its orbital energies depend only on n in the non-relativistic model, so 2s and 2p are degenerate.':`As Z rises, nuclear attraction generally grows, while inner electrons shield outer electrons. In multi-electron atoms, subshells such as 2s and 2p no longer have the same energy.`;
+ makeOrbital(orb,opacity,scale);drawEnergy(z,orb);
+}
+function drawEnergy(z,selected){
+ const c=$('energyCanvas'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#081321';ctx.fillRect(0,0,w,h);
+ ctx.font='12px system-ui';ctx.fillStyle='#a9bdd5';ctx.fillText('Higher energy',14,22);ctx.fillText('Energy ↑',14,42);
+ const names=['1s','2s','2p','3s','3p'];let yBase=[335,268,238,173,145];
+ // qualitative level shift, preserving typical filling order for Z>1
+ let shift=Math.log(z+1)*5;
+ names.forEach((n,i)=>{let y=yBase[i]-shift*(i<2?1:i<3?1.4:1.8);let x1=110,x2=n.endsWith('p')?390:330;
+ ctx.strokeStyle=n===selected?'#55d9f4':'#47627e';ctx.lineWidth=n===selected?4:2;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+ ctx.fillStyle=n===selected?'#dffaff':'#c1d3e7';ctx.fillText(n,x1-35,y+4);
+ let cap=n.endsWith('p')?6:2;let occ=configFor(z).find(a=>a[0]===n)?.[1]||0;
+ for(let k=0;k<cap;k++){let xx=x1+12+k*(n.endsWith('p')?42:42);if(xx>x2-10)continue;ctx.fillStyle=k<occ?'#ffd166':'#1d3047';ctx.beginPath();ctx.arc(xx,y-9,6,0,Math.PI*2);ctx.fill();if(k<occ){ctx.fillStyle='#fff1c2';ctx.font='10px system-ui';ctx.fillText(k%2===0?'↑':'↓',xx-3,y-6);ctx.font='12px system-ui';}}
+ });
+ ctx.fillStyle='#a9bdd5';ctx.fillText('Occupied states: gold · Empty states: dark',90,375);
+}
+function drawBands(){
+ const c=$('bandCanvas'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#081321';ctx.fillRect(0,0,w,h);
+ const N=+$('atoms').value,s=+$('spacing').value,mat=$('material').value;
+ $('atomsVal').textContent=N; $('spacingVal').textContent=s<30?'Far apart':s<65?'Approaching':'Close / solid-like';
+ $('materialLabel').textContent=mat==='semi'?'Silicon-like semiconductor':mat==='metal'?'Metal':'Insulator';
+ $('stateCount').textContent=N===1?'2':N<20?String(N*2):'≈ 2N';
+ $('gapVal').textContent=mat==='metal'?'0 eV (overlap)':mat==='semi'?'1.1 eV':'5.0 eV';
+ $('fillVal').textContent=mat==='metal'?'Partly occupied':'Valence full';
+ const left=95,top=55,bottom=h-45;ctx.font='14px system-ui';ctx.fillStyle='#dcecff';ctx.fillText('Energy ↑',18,28);
+ ctx.strokeStyle='#29415e';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.stroke();
+ // Keep the diagram's horizontal extent fixed: atom count changes the number/density
+ // of allowed states, not the plotted band's physical energy width or its canvas width.
+ // Each allowed state is drawn as a horizontal line. Closer atoms (spacing setting)
+ // increase the illustrative energy spread because orbital overlap is stronger.
+ const bandRight=w-30;
+ const bandW=bandRight-left;
+ const levelY=[135,205,305,370];const labels=['3p-like','3s-like','2p-like','2s-like'];
+ levelY.forEach((y,i)=>{ctx.fillStyle='#a9bdd5';ctx.fillText(labels[i],12,y+4);ctx.strokeStyle='#3b536c';ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(bandRight,y);ctx.stroke();});
+ const convergence=s/100, spread=5+convergence*35;
+ let gap=mat==='metal'?0:mat==='semi'?48:125;
+ const vTop=260-spread*.4, vBot=330+spread*.35, cBot=vTop-gap, cTop=cBot-65-spread*.4;
+ const count=Math.max(1,Math.min(N,160));
+ function horizontalStates(y1,y2,color,alpha){
+   ctx.fillStyle=alpha;ctx.fillRect(left+8,y1,Math.max(2,bandW-8),y2-y1);
+   ctx.strokeStyle=color;ctx.lineWidth=1;
+   for(let i=0;i<count;i++){
+     const t=count===1?0.5:i/(count-1);
+     const y=y1+3+t*Math.max(0,y2-y1-6);
+     ctx.beginPath();ctx.moveTo(left+8,y);ctx.lineTo(bandRight,y);ctx.stroke();
+   }
+ }
+ if(mat==='metal'){
+   horizontalStates(205-spread/2,300+spread/2,'#ffd166','rgba(255,209,102,.16)');
+   ctx.fillStyle='#ffd166';ctx.fillText('Overlapping / partly filled states',left+12,195);
+ }else{
+   horizontalStates(vTop,vBot,'#55d9f4','rgba(85,217,244,.16)');
+   ctx.fillStyle='#b9f4ff';ctx.fillText('VALENCE BAND (filled)',left+14,vTop+20);
+   horizontalStates(cTop,cBot,'#ff7aa2','rgba(255,122,162,.15)');
+   ctx.fillStyle='#ffc0d2';ctx.fillText('CONDUCTION BAND (empty at 0 K)',left+14,cTop+20);
+   if(gap>0){ctx.strokeStyle='#ffd166';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(left+8,cBot);ctx.lineTo(bandRight,cBot);ctx.moveTo(left+8,vTop);ctx.lineTo(bandRight,vTop);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ffd166';ctx.fillText('Forbidden gap',Math.max(left+12,bandRight-125),(cBot+vTop)/2+4);}
+ }
+ if(s<35){ctx.fillStyle='#e7f0ff';ctx.fillText('Separated atoms: discrete levels',left+8,45);}
+ ctx.fillStyle='#a9bdd5';ctx.fillText(`N = ${N} atom${N===1?'':'s'} · overlap setting = ${s}%`,left,bottom+27);
+}
+$('element').addEventListener('change',()=>{syncOrbitalChoices(+$('element').value);renderAtom();});
+['orbital','cloud','scale','cloudView'].forEach(id=>$(id).addEventListener('input',renderAtom));
+['atoms','spacing','material'].forEach(id=>$(id).addEventListener('input',drawBands));
+function showTab(tab){['atomPage','manyPage','guidePage'].forEach((id,i)=>$(id).style.display=id===tab?'block':'none');['tabAtom','tabMany','tabGuide'].forEach((id,i)=>$(id).classList.toggle('active',['atomPage','manyPage','guidePage'][i]===tab));if(tab==='manyPage')drawBands();if(tab==='atomPage'&&renderer){const w=$('orbital3d').clientWidth;camera.aspect=w/390;camera.updateProjectionMatrix();renderer.setSize(w,390)}}
+$('tabAtom').onclick=()=>showTab('atomPage');$('tabMany').onclick=()=>showTab('manyPage');$('tabGuide').onclick=()=>showTab('guidePage');
+init3d();renderAtom();drawBands();
+</script>
+</body></html>
