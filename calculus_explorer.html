@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive Integration Explorer</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--panel:#f6f7f9;--card:#fff;--text:#20242a;--muted:#626b76;--border:#d7dce2;--accent:#2878d0}
+@media(prefers-color-scheme:dark){:root{--bg:#17191d;--panel:#22252a;--card:#1d2025;--text:#eceff3;--muted:#aab2bc;--border:#3a4048;--accent:#70a9f5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1600px;margin:auto;padding:16px}
+h1{font-size:clamp(1.5rem,4vw,2.2rem);margin:0 0 6px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.credit{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:8px}
+.sub{color:var(--muted);margin:0 0 16px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.tab-btn{width:auto!important;cursor:pointer;font-weight:600}
+.tab-btn[aria-selected="true"]{background:var(--accent);color:white;border-color:var(--accent)}
+.tab-panel[hidden]{display:none!important}
+.history-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:14px}
+.history-canvas{width:100%;height:auto;display:block}
+.history-controls{display:flex;flex-direction:column;gap:12px}
+.history-stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px}
+.app-layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start}
+.sidebar{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:3px}
+.workspace{min-width:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sidebar .panel{margin-top:0!important}
+.workspace .panel{margin-top:0!important;margin-bottom:12px}
+.workspace canvas{max-height:52vh}
+.sidebar h2{font-size:1.05rem;margin:0 0 2px}
+.sidebar .panel{padding:12px}
+.sidebar label{margin-bottom:5px}
+.sidebar .row{gap:8px}
+.sidebar select,.sidebar button{font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+select,button{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font:inherit}
+select{width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.small{font-size:12px;color:var(--muted)}
+canvas{display:block;width:100%;height:auto;border-radius:8px;touch-action:pan-y;cursor:crosshair}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--muted)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.metric{border:1px solid var(--border);border-radius:10px;padding:12px;min-width:0}
+.metric .k{font-size:12px;color:var(--muted);margin-bottom:5px}
+.metric .v{font-size:clamp(17px,3vw,24px);font-weight:700;overflow-wrap:anywhere}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.actions button{flex:1;cursor:pointer}
+@media(max-width:800px){
+main{padding:12px}.header{gap:8px}.credit{white-space:normal;text-align:right;max-width:42%}.history-layout{grid-template-columns:1fr}.app-layout{grid-template-columns:1fr}
+.sidebar{position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.sidebar h2,.sidebar .wide{grid-column:1/-1}.workspace canvas{max-height:none}
+}
+@media(max-width:560px){.sidebar{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main>
+  <div class="header">
+    <div><h1>Interactive Integration Explorer</h1><p class="sub">Explore area, approximation, and the ideas that led to integration.</p></div>
+    <div class="credit">Prepared by Buddhike Priyadarshana</div>
+  </div>
+  <nav class="tabs" aria-label="Simulation sections">
+    <button class="tab-btn" type="button" role="tab" aria-selected="true" data-tab="explore">Explore Functions</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="archimedes">Archimedes' Workshop</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="connection">From Sums to Integrals</button>
+  </nav>
+  <section id="tab-explore" class="tab-panel" role="tabpanel">
+  <div class="app-layout">
+    <aside class="sidebar" aria-label="Simulation controls">
+      <div class="panel wide"><h2>Controls</h2><div class="small">Changes update both graphs instantly.</div></div>
+  <div class="grid">
+    <div class="panel"><label for="fn">Function</label><select id="fn"><option value="sq" selected>y = x²</option><option value="lin">y = x</option><option value="sin">y = sin(x)</option><option value="nsq">y = −x²</option></select></div>
+    <div class="panel"><label for="method">Rectangle height</label><select id="method"><option value="mid" selected>Midpoint rule</option><option value="left">Left endpoints</option><option value="right">Right endpoints</option></select></div>
+  </div>
+  <section class="panel" style="margin-top:12px">
+    <div class="row"><label for="a">Left boundary a</label><strong id="av">−0.5</strong></div>
+    <input id="a" type="range" min="-3" max="3" step="0.1" value="-0.5">
+    <div class="row small"><span>−3</span><span>0</span><span>3</span></div>
+    <div class="row" style="margin-top:14px"><label for="b">Right boundary b</label><strong id="bv">2.0</strong></div>
+    <input id="b" type="range" min="-3" max="3" step="0.1" value="2">
+    <div class="row small"><span>−3</span><span>0</span><span>3</span></div>
+    <div class="small" style="margin-top:8px">Tip: drag either amber boundary line on the graph.</div>
+  </section>
+  <section class="panel" style="margin-top:12px">
+    <div class="row"><label for="n">Number of rectangles</label><strong id="nv">8</strong></div>
+    <input id="n" type="range" min="1" max="60" step="1" value="8">
+    <div class="row small"><span>1</span><span>30</span><span>60</span></div>
+  </section>
+    </aside>
+    <div class="workspace">
+  <section class="panel" style="margin-top:12px">
+    <div class="row" style="margin-bottom:10px"><strong>Function and signed area</strong><span class="small">Interactive graph</span></div>
+    <canvas id="graph" width="900" height="560" aria-label="Function graph with signed Riemann rectangles and movable interval boundaries"></canvas>
+    <div class="legend">
+      <span><i class="swatch" style="background:#3986df"></i>Function</span>
+      <span><i class="swatch" style="background:#26a269"></i>Positive area</span>
+      <span><i class="swatch" style="background:#d9534f"></i>Negative area</span>
+      <span><i class="swatch" style="background:#e3a52b"></i>Interval boundaries</span>
+    </div>
+  </section>
+  <section class="panel" style="margin-top:12px">
+    <div class="row" style="margin-bottom:6px"><strong>How the error changes as n increases</strong><span class="small">Absolute error</span></div>
+    <p class="small" style="margin:0 0 10px">Each point shows the error using that many rectangles. The highlighted point is your current n.</p>
+    <canvas id="errorGraph" width="900" height="340" aria-label="Graph of absolute approximation error versus number of rectangles"></canvas>
+    <div class="small" style="margin-top:8px">Horizontal axis: n (number of rectangles). Vertical axis: |rectangle sum − exact integral|. A point close to zero means a more accurate approximation.</div>
+  </section>
+  <div class="metrics">
+    <div class="metric"><div class="k">Rectangle sum</div><div class="v" id="sum">—</div><div class="small">Signed approximation</div></div>
+    <div class="metric"><div class="k">Definite integral</div><div class="v" id="exact">—</div><div class="small">Exact value</div></div>
+    <div class="metric"><div class="k">Approximation error</div><div class="v" id="err">—</div><div class="small">Absolute difference</div></div>
+  </div>
+  <section class="panel">
+    <strong>What is happening?</strong>
+    <p id="explain">Each rectangle approximates the signed area over a small interval. Increasing the number of rectangles usually improves the approximation.</p>
+    <div class="actions"><button id="reset" type="button">Reset example</button><button id="more" type="button">Use 30 rectangles</button></div>
+  </section>
+  <p class="small" style="margin-top:4px">Teaching note: a definite integral gives signed area. Regions above the x-axis contribute positively; regions below it contribute negatively.</p>
+    </div>
+  </div>
+  </section>
+  <section id="tab-archimedes" class="tab-panel" role="tabpanel" hidden>
+    <div class="panel">
+      <h2 style="margin-top:0">Archimedes' Workshop</h2>
+      <p>How can we find the area of a curved region without calculus? Archimedes used geometric reasoning to trap an unknown area between known areas. This family of techniques is called the <strong>method of exhaustion</strong>.</p>
+      <div class="history-layout">
+        <div>
+          <canvas id="histCanvas" class="history-canvas" width="720" height="470" aria-label="Geometric approximation of the area under a parabola or a circle"></canvas>
+          <div class="legend"><span><i class="swatch" style="background:#3986df"></i>Curve or circle</span><span><i class="swatch" style="background:#42a878"></i>Approximating shapes</span></div>
+        </div>
+        <div class="history-controls">
+          <div><label for="histShape">Geometric challenge</label><select id="histShape"><option value="parabola">Area under a parabola</option><option value="circle">Area of a circle</option></select></div>
+          <div><div class="row"><label for="histN">Number of pieces</label><strong id="histNv">4</strong></div><input id="histN" type="range" min="2" max="32" step="2" value="4"><div class="row small"><span>2</span><span>16</span><span>32</span></div></div>
+          <div class="history-stat"><div class="small">What the construction shows</div><p id="histExplain" style="margin:6px 0 0">A few rectangles give a rough estimate of the area. More, narrower rectangles follow the curve more closely.</p></div>
+          <div class="history-stat"><strong>Think like a geometer</strong><p id="histQuestion" style="margin:6px 0 0">Where are the gaps? What changes when you double the number of pieces?</p></div>
+          <p class="small">Historical note: Archimedes did not use modern Riemann sums. He used geometric constructions and rigorous exhaustion arguments. These displays are modern teaching analogies.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="tab-connection" class="tab-panel" role="tabpanel" hidden>
+    <div class="panel">
+      <h2 style="margin-top:0">From Sums to Integrals</h2>
+      <p>Integration can be understood as the limit of a sum of many small contributions. Each rectangle contributes approximately its height multiplied by its width.</p>
+      <div style="font-size:clamp(20px,4vw,30px);text-align:center;padding:20px 8px">Area ≈ Σ f(xᵢ*) Δx</div>
+      <p>For equal-width rectangles, Δx = (b − a)/n. As the number of rectangles increases, their width decreases. For a suitable function, the sums approach a definite integral:</p>
+      <div style="font-size:clamp(20px,4vw,30px);text-align:center;padding:14px 8px">∫ₐᵇ f(x) dx = limₙ→∞ Σ f(xᵢ*) Δx</div>
+      <div class="history-stat"><strong>Connect this to the graph</strong><p style="margin-bottom:0">Return to <em>Explore Functions</em>. Change n and watch the shaded rectangles and error graph update. The exact integral is the limiting signed sum, not necessarily the total geometric area.</p></div>
+      <h3>Three ideas to remember</h3><ol><li>Break a difficult region into simple pieces.</li><li>Add the contributions to estimate the whole.</li><li>Refine the pieces and study the limit to define the exact area.</li></ol>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('graph'), ctx = canvas.getContext('2d');
+  const errorCanvas = $('errorGraph'), ectx = errorCanvas.getContext('2d');
+  const state = {a:-0.5,b:2,n:8,fn:'sq',method:'mid',drag:null};
+  const xmin=-3,xmax=3,ymin=-2.5,ymax=5;
+  function f(x) {
+    if(state.fn==='sq') return x*x;
+    if(state.fn==='lin') return x;
+    if(state.fn==='sin') return Math.sin(x);
+    return -x*x;
+  }
+  function F(x) {
+    if(state.fn==='sq') return x*x*x/3;
+    if(state.fn==='lin') return x*x/2;
+    if(state.fn==='sin') return -Math.cos(x);
+    return -x*x*x/3;
+  }
+  function fmt(x) { if(Math.abs(x)<0.0000005)x=0; return x.toFixed(4); }
+  function X(x) { return 54+(x-xmin)/(xmax-xmin)*(canvas.width-78); }
+  function Y(y) { return 20+(ymax-y)/(ymax-ymin)*(canvas.height-66); }
+  function draw() {
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff';
+    ctx.fillRect(0,0,W,H);
+    ctx.font='14px system-ui,sans-serif';ctx.lineWidth=1;
+    for(let x=-3;x<=3;x++){
+      ctx.strokeStyle=x===0?'#87909a':'#87909a45';ctx.lineWidth=x===0?1.7:1;
+      ctx.beginPath();ctx.moveTo(X(x),Y(ymin));ctx.lineTo(X(x),Y(ymax));ctx.stroke();
+      ctx.fillStyle='#87909a';ctx.textAlign='center';ctx.fillText(x,X(x),H-27);
+    }
+    for(let y=-2;y<=5;y++){
+      ctx.strokeStyle=y===0?'#87909a':'#87909a45';ctx.lineWidth=y===0?1.7:1;
+      ctx.beginPath();ctx.moveTo(X(xmin),Y(y));ctx.lineTo(X(xmax),Y(y));ctx.stroke();
+      ctx.fillStyle='#87909a';ctx.textAlign='right';ctx.fillText(y,X(xmin)-9,Y(y)+5);
+    }
+    ctx.textAlign='left';ctx.fillText('y',X(xmin)-20,Y(4.7));ctx.fillText('x',X(2.92),Y(0)-10);
+    const lo=Math.min(state.a,state.b),hi=Math.max(state.a,state.b),dx=(hi-lo)/state.n;
+    for(let i=0;i<state.n;i++){
+      const l=lo+i*dx,r=l+dx;
+      const m=state.method==='left'?l:state.method==='right'?r:(l+r)/2;
+      const v=f(m),top=Y(Math.max(0,v)),base=Y(Math.min(0,v));
+      ctx.fillStyle=v>=0?'rgba(38,162,105,.35)':'rgba(217,83,79,.4)';
+      ctx.fillRect(X(l),top,Math.max(.5,X(r)-X(l)),base-top);
+      ctx.strokeStyle=v>=0?'rgba(38,162,105,.9)':'rgba(217,83,79,.95)';
+      ctx.lineWidth=1;ctx.strokeRect(X(l),top,Math.max(.5,X(r)-X(l)),base-top);
+    }
+    ctx.beginPath();let started=false;
+    for(let px=0;px<=1100;px++){
+      const x=xmin+(xmax-xmin)*px/1100,y=f(x);
+      if(y<ymin||y>ymax){started=false;continue}
+      if(!started){ctx.moveTo(X(x),Y(y));started=true}else ctx.lineTo(X(x),Y(y));
+    }
+    ctx.strokeStyle='#3986df';ctx.lineWidth=3;ctx.stroke();
+    [[state.a,'a'],[state.b,'b']].forEach(([x,label])=>{
+      ctx.strokeStyle='#e3a52b';ctx.lineWidth=2;ctx.setLineDash([6,5]);
+      ctx.beginPath();ctx.moveTo(X(x),Y(ymin));ctx.lineTo(X(x),Y(ymax));ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#e3a52b';ctx.beginPath();ctx.arc(X(x),Y(0),6,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#b17c0d';ctx.textAlign='center';ctx.font='bold 15px system-ui,sans-serif';ctx.fillText(label,X(x),Y(0)-14);
+    });
+  }
+  function errorForN(n) {
+    const lo=Math.min(state.a,state.b),hi=Math.max(state.a,state.b);
+    const dx=(hi-lo)/n,orientation=state.b>=state.a?1:-1;
+    let sum=0;
+    for(let i=0;i<n;i++){
+      const l=lo+i*dx,r=l+dx;
+      const m=state.method==='left'?l:state.method==='right'?r:(l+r)/2;
+      sum+=f(m)*dx*orientation;
+    }
+    return Math.abs(sum-(F(state.b)-F(state.a)));
+  }
+  function drawErrorGraph() {
+    const W=errorCanvas.width,H=errorCanvas.height;
+    ectx.clearRect(0,0,W,H);
+    ectx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff';
+    ectx.fillRect(0,0,W,H);
+    const L=78,R=22,T=25,B=48,plotW=W-L-R,plotH=H-T-B;
+    const errors=Array.from({length:60},(_,i)=>errorForN(i+1));
+    const maxErr=Math.max(...errors,1e-8), yMax=maxErr*1.12;
+    const px=n=>L+(n-1)/59*plotW, py=e=>T+(1-e/yMax)*plotH;
+    ectx.font='13px system-ui,sans-serif';ectx.lineWidth=1;
+    for(let i=0;i<=4;i++){
+      const val=yMax*i/4,y=py(val);
+      ectx.strokeStyle='#87909a45';ectx.beginPath();ectx.moveTo(L,y);ectx.lineTo(W-R,y);ectx.stroke();
+      ectx.fillStyle='#87909a';ectx.textAlign='right';ectx.fillText(val.toExponential(1),L-9,y+4);
+    }
+    [1,10,20,30,40,50,60].forEach(n=>{
+      const x=px(n);ectx.strokeStyle='#87909a30';ectx.beginPath();ectx.moveTo(x,T);ectx.lineTo(x,H-B);ectx.stroke();
+      ectx.fillStyle='#87909a';ectx.textAlign='center';ectx.fillText(n,x,H-23);
+    });
+    ectx.fillStyle='#87909a';ectx.textAlign='center';ectx.fillText('Number of rectangles (n)',L+plotW/2,H-5);
+    ectx.save();ectx.translate(18,T+plotH/2);ectx.rotate(-Math.PI/2);ectx.textAlign='center';ectx.fillText('Absolute error',0,0);ectx.restore();
+    ectx.beginPath();errors.forEach((e,i)=>{if(i===0)ectx.moveTo(px(i+1),py(e));else ectx.lineTo(px(i+1),py(e))});
+    ectx.strokeStyle='#3986df';ectx.lineWidth=2.5;ectx.stroke();
+    errors.forEach((e,i)=>{ectx.beginPath();ectx.arc(px(i+1),py(e),i+1===state.n?5:2,0,Math.PI*2);ectx.fillStyle=i+1===state.n?'#e3a52b':'#3986df';ectx.fill()});
+    const cur=errors[state.n-1],cx=px(state.n),cy=py(cur);
+    ectx.strokeStyle='#e3a52b';ectx.lineWidth=1.5;ectx.setLineDash([4,4]);ectx.beginPath();ectx.moveTo(cx,cy);ectx.lineTo(cx,H-B);ectx.stroke();ectx.setLineDash([]);
+    ectx.fillStyle='#b17c0d';ectx.textAlign=cx>W-175?'right':'left';ectx.font='bold 13px system-ui,sans-serif';
+    ectx.fillText('n='+state.n+'  error='+fmt(cur),cx>W-175?cx-8:cx+8,Math.max(T+14,cy-10));
+  }
+  function update() {
+    $('av').textContent=state.a.toFixed(1);$('bv').textContent=state.b.toFixed(1);$('nv').textContent=state.n;
+    $('a').value=state.a;$('b').value=state.b;$('n').value=state.n;
+    let sum=0;
+    const lo=Math.min(state.a,state.b),hi=Math.max(state.a,state.b),dx=(hi-lo)/state.n;
+    const orientation=state.b>=state.a?1:-1;
+    for(let i=0;i<state.n;i++){
+      const l=lo+i*dx,r=l+dx;
+      const m=state.method==='left'?l:state.method==='right'?r:(l+r)/2;
+      sum+=f(m)*dx*orientation;
+    }
+    const exact=F(state.b)-F(state.a);
+    $('sum').textContent=fmt(sum);$('exact').textContent=fmt(exact);$('err').textContent=fmt(Math.abs(sum-exact));
+    const name=state.method==='mid'?'midpoint':state.method==='left'?'left-endpoint':'right-endpoint';
+    $('explain').textContent=`Using ${state.n} ${name} rectangles over [${state.a.toFixed(1)}, ${state.b.toFixed(1)}], each rectangle has signed width ${(state.b-state.a)/state.n>=0?fmt((state.b-state.a)/state.n):fmt((state.b-state.a)/state.n)}. Green rectangles contribute positive signed area; red rectangles contribute negative signed area. The exact definite integral is ${fmt(exact)}, and the rectangle approximation is ${fmt(sum)}.`;
+    draw();
+    drawErrorGraph();
+  }
+  $('fn').addEventListener('change',e=>{state.fn=e.target.value;update()});
+  $('method').addEventListener('change',e=>{state.method=e.target.value;update()});
+  $('a').addEventListener('input',e=>{state.a=+e.target.value;update()});
+  $('b').addEventListener('input',e=>{state.b=+e.target.value;update()});
+  $('n').addEventListener('input',e=>{state.n=+e.target.value;update()});
+  $('reset').addEventListener('click',()=>{Object.assign(state,{a:-.5,b:2,n:8,fn:'sq',method:'mid'});$('fn').value='sq';$('method').value='mid';update()});
+  $('more').addEventListener('click',()=>{state.n=30;update()});
+  function pointerX(e){const r=canvas.getBoundingClientRect();return (e.clientX-r.left)/r.width*canvas.width}
+  canvas.addEventListener('pointerdown',e=>{
+    const x=pointerX(e),da=Math.abs(x-X(state.a)),db=Math.abs(x-X(state.b));
+    if(Math.min(da,db)<25){state.drag=da<db?'a':'b';canvas.setPointerCapture(e.pointerId);e.preventDefault()}
+  });
+  canvas.addEventListener('pointermove',e=>{
+    if(!state.drag)return;
+    const px=pointerX(e);
+    const x=xmin+(px-X(xmin))/(X(xmax)-X(xmin))*(xmax-xmin);
+    state[state.drag]=Math.max(-3,Math.min(3,Math.round(x*10)/10));update();
+  });
+  function release(){state.drag=null}
+  canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);
+  update();
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.setAttribute('aria-selected',String(b===btn)));
+      document.querySelectorAll('.tab-panel').forEach(p=>p.hidden=p.id!=='tab-'+btn.dataset.tab);
+      if(btn.dataset.tab==='archimedes') drawHistory();
+      if(btn.dataset.tab==='explore'){draw();drawErrorGraph();}
+    });
+  });
+
+  const hc=$('histCanvas'), hctx=hc.getContext('2d');
+  function drawHistory(){
+    const W=hc.width,H=hc.height,N=+$('histN').value,shape=$('histShape').value;
+    hctx.clearRect(0,0,W,H);
+    hctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card').trim()||'#fff';
+    hctx.fillRect(0,0,W,H);
+    if(shape==='parabola'){
+      const L=65,R=24,T=24,B=55,pw=W-L-R,ph=H-T-B;
+      const xx=x=>L+x*pw,yy=y=>T+(1-y)*ph,dx=1/N;
+      hctx.strokeStyle='#87909a70';hctx.beginPath();hctx.moveTo(L,yy(0));hctx.lineTo(W-R,yy(0));hctx.moveTo(L,yy(0));hctx.lineTo(L,T);hctx.stroke();
+      for(let i=0;i<N;i++){
+        const x=i*dx,xm=x+dx/2,height=xm*xm;
+        hctx.fillStyle='rgba(66,168,120,.38)';hctx.strokeStyle='#27865c';hctx.lineWidth=1;
+        hctx.fillRect(xx(x),yy(height),pw*dx,yy(0)-yy(height));hctx.strokeRect(xx(x),yy(height),pw*dx,yy(0)-yy(height));
+      }
+      hctx.beginPath();for(let i=0;i<=300;i++){const x=i/300,y=x*x;if(!i)hctx.moveTo(xx(x),yy(y));else hctx.lineTo(xx(x),yy(y))}
+      hctx.strokeStyle='#3986df';hctx.lineWidth=3;hctx.stroke();
+      hctx.fillStyle='#87909a';hctx.font='14px system-ui,sans-serif';hctx.fillText('y = x²',L+8,T+18);
+      $('histExplain').textContent=`${N} midpoint rectangles estimate the area under y = x² from x = 0 to x = 1. The exact area is 1/3 square units. This is a modern illustration of approximation, not Archimedes’ literal construction.`;
+      $('histQuestion').textContent=N<=6?'Where do the rectangles miss the curved boundary? Try doubling the number of pieces.':N<=18?'The rectangles follow the curve more closely. What happens to the uncovered gap as they narrow?':'The approximation is finer. How could you prove the exact result rather than rely on a drawing?';
+    }else{
+      const cx=W/2,cy=H/2-4,r=Math.min(W*.31,H*.34),step=2*Math.PI/N;
+      hctx.beginPath();hctx.arc(cx,cy,r,0,Math.PI*2);hctx.strokeStyle='#3986df';hctx.lineWidth=3;hctx.stroke();
+      hctx.beginPath();for(let i=0;i<N;i++){const a=-Math.PI/2+i*step,x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);if(!i)hctx.moveTo(x,y);else hctx.lineTo(x,y)}
+      hctx.closePath();hctx.fillStyle='rgba(66,168,120,.36)';hctx.strokeStyle='#27865c';hctx.lineWidth=2;hctx.fill();hctx.stroke();
+      hctx.beginPath();hctx.moveTo(cx,cy);hctx.lineTo(cx,cy-r);hctx.strokeStyle='#87909a';hctx.lineWidth=1.3;hctx.stroke();
+      hctx.fillStyle='#87909a';hctx.font='14px system-ui,sans-serif';hctx.fillText('r',cx+7,cy-r/2);hctx.fillText(`${N}-sided inscribed polygon`,18,H-22);
+      $('histExplain').textContent=`The ${N}-sided polygon lies inside the circle, so its area is a lower bound. More sides make the polygon follow the circumference more closely.`;
+      $('histQuestion').textContent=N<=6?'How much of the circle is outside the polygon? Can you imagine a matching shape just outside the circle?':N<=18?'The polygon is closer. An outer polygon could provide an upper bound, trapping the true area between bounds.':'The gap is small. Exhaustion reasons about making the gap as small as required, not just visually small.';
+    }
+    $('histNv').textContent=N;
+  }
+  $('histN').addEventListener('input',drawHistory);
+  $('histShape').addEventListener('change',drawHistory);
+  drawHistory();
+})();
+</script>
+</body>
+</html>
